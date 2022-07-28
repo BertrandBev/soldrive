@@ -7,6 +7,16 @@ fn timestamp() -> i64 {
     clock.unix_timestamp
 }
 
+fn copy_content(file: &mut AccountInfo, content: &Vec<u8>) -> Result<()> {
+    let mut data = file.try_borrow_mut_data()?;
+    let data: &mut [u8] = &mut data;
+    let min_idx = File::size(0);
+    let idx_start = data.len() - content.len();
+    require!(idx_start >= min_idx, ErrorCode::DataSizeExceeded);
+    (&mut data[idx_start..]).copy_from_slice(&content[..]);
+    Ok(())
+}
+
 #[program]
 pub mod soldrive {
     use super::*;
@@ -45,14 +55,18 @@ pub mod soldrive {
     pub fn update_folder(
         ctx: Context<UpdateFolder>,
         _id: u32,
-        parent: u32,
-        name: String,
+        parent: Option<u32>,
+        name: Option<String>,
     ) -> Result<()> {
         // Check args
-        require!(name.len() <= Folder::NAME_MAX_LEN, ErrorCode::StringTooLong);
         let folder = &mut ctx.accounts.folder;
-        folder.name = name;
-        folder.parent = parent;
+        if let Some(parent) = parent {
+            folder.parent = parent;
+        }
+        if let Some(name) = name {
+            require!(name.len() <= Folder::NAME_MAX_LEN, ErrorCode::StringTooLong);
+            folder.name = name;
+        }
         Ok(())
     }
 
@@ -64,17 +78,15 @@ pub mod soldrive {
 
     pub fn create_file(
         ctx: Context<CreateFile>,
+        max_size: u32,
         parent: u32,
-        size: u32,
-        access: Access,
+        name: String,
         file_type: FileType,
-        content: String,
+        access: Access,
+        content: Vec<u8>,
     ) -> Result<()> {
         // Check args
-        require!(
-            content.len() <= Folder::NAME_MAX_LEN,
-            ErrorCode::StringTooLong
-        );
+        require!(name.len() <= File::NAME_MAX_LEN, ErrorCode::StringTooLong);
         let user = &mut ctx.accounts.user;
         let file = &mut ctx.accounts.file;
         require!(user.folder_id < u32::MAX, ErrorCode::FileCountExceeded);
@@ -82,18 +94,20 @@ pub mod soldrive {
         // Bump count
         user.file_id += 1;
         user.file_count += 1;
-        user.space_used += size;
+        user.space_used += max_size;
 
         // Check args
-        // require!(name.len() <= File::NAME_MAX_LEN, ErrorCode::StringTooLong);
         file.id = user.file_id;
         file.created_at = timestamp();
-        file.size = size;
+        file.size = content.len() as u32;
         file.parent = parent;
-        file.access = access;
+        file.name = name;
         file.file_type = file_type;
+        file.access = access;
 
-        // TODO: Copy content
+        // Copy content over
+        let mut info = file.to_account_info();
+        copy_content(&mut info, &content)?;
 
         Ok(())
     }
@@ -102,21 +116,27 @@ pub mod soldrive {
         ctx: Context<UpdateFile>,
         _id: u32,
         parent: Option<u32>,
+        name: Option<String>,
         access: Option<Access>,
-        content: Option<String>,
+        content: Option<Vec<u8>>,
     ) -> Result<()> {
         // Check args
-        let user = &mut ctx.accounts.user;
         let file = &mut ctx.accounts.file;
         // Update file
         if let Some(parent) = parent {
             file.parent = parent;
         }
+        if let Some(name) = name {
+            require!(name.len() <= File::NAME_MAX_LEN, ErrorCode::StringTooLong);
+            file.name = name;
+        }
         if let Some(access) = access {
             file.access = access;
         }
         if let Some(content) = content {
-            // TODO: Copy content
+            file.size = content.len() as u32;
+            let mut info = file.to_account_info();
+            copy_content(&mut info, &content)?;
         }
         Ok(())
     }
@@ -125,7 +145,13 @@ pub mod soldrive {
         let file = &mut ctx.accounts.file;
         let user = &mut ctx.accounts.user;
         user.file_count -= 1;
-        user.space_used -= file.size;
+
+        // Reduce used space
+        let info = file.to_account_info();
+        let data = info.try_borrow_data()?;
+        let max_size = data.len() - File::size(0);
+        user.space_used -= max_size as u32;
+
         Ok(())
     }
 }
@@ -182,15 +208,16 @@ pub struct RemoveFolder<'info> {
         seeds = [b"user".as_ref(), authority.key.as_ref()],
         bump)]
     pub user: Account<'info, User>,
+    #[account(mut)]
     pub authority: Signer<'info>,
 }
 
 #[derive(Accounts)]
-#[instruction(_parent: u32, size: u32)]
+#[instruction(max_size: u32)]
 pub struct CreateFile<'info> {
     #[account(
         init, payer = authority,
-        space = File::size(size),
+        space = File::size(max_size),
         seeds = [b"file".as_ref(), authority.key.as_ref(), &u32::to_le_bytes(user.file_id + 1)],
         bump)]
     pub file: Account<'info, File>,
@@ -210,10 +237,6 @@ pub struct UpdateFile<'info> {
         seeds = [b"file".as_ref(), authority.key.as_ref(), &u32::to_le_bytes(_id)],
         bump)]
     pub file: Account<'info, File>,
-    #[account(mut,
-        seeds = [b"user".as_ref(), authority.key.as_ref()],
-        bump)]
-    pub user: Account<'info, User>,
     pub authority: Signer<'info>,
 }
 
@@ -229,6 +252,7 @@ pub struct RemoveFile<'info> {
         seeds = [b"user".as_ref(), authority.key.as_ref()],
         bump)]
     pub user: Account<'info, User>,
+
     pub authority: Signer<'info>,
 }
 
@@ -297,25 +321,32 @@ pub struct File {
     pub id: u32,
     pub created_at: i64,
     pub parent: u32,
+    pub name: String,
     pub file_type: FileType,
     pub access: Access,
     pub size: u32,
     // pub content: String, omitted for deserialization purposes
 }
 
+pub struct FileEncoder {
+    pub content: String,
+}
+
 impl File {
     const PADDING: usize = 64;
+    const NAME_MAX_LEN: usize = 32;
 
-    fn size(char_count: u32) -> usize {
+    fn size(byte_count: u32) -> usize {
         8                                 // discriminator
         + 4                               // id
         + 8                               // created_at
         + 4                               // parent
+        + 4 + File::NAME_MAX_LEN          // name
         + std::mem::size_of::<FileType>() // file_type
         + std::mem::size_of::<Access>()   // access
         + 4                               // size
         + File::PADDING                   // padding
-        + char_count as usize // content
+        + byte_count as usize // content
     }
 }
 
@@ -327,4 +358,6 @@ pub enum ErrorCode {
     FolderCountExceeded,
     #[msg("File count exceeded")]
     FileCountExceeded,
+    #[msg("Data size exceeded")]
+    DataSizeExceeded,
 }
