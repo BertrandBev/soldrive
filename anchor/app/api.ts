@@ -2,7 +2,6 @@ import { Program } from "@project-serum/anchor";
 import * as anchor from "@project-serum/anchor";
 import { Soldrive } from "../target/types/soldrive";
 import bs58 from "bs58";
-import borsh from "borsh";
 import web3 = anchor.web3;
 
 export interface Keyed<T> {
@@ -32,15 +31,17 @@ export type File = FileRaw & { content: string };
 export type Access = "private" | "publicRead" | "publicReadWrite";
 export type FileType = "file" | "note";
 
-export function getAPI(authorityKp: web3.Keypair, program: Program<Soldrive>) {
-  const authority = authorityKp.publicKey;
+export function getAPI(
+  authority: web3.PublicKey,
+  program: Program<Soldrive>,
+  defaultSigners: web3.Keypair[] = []
+) {
   const connection = program.provider.connection;
 
   // Retreive types
   async function airdrop(pubkey: web3.PublicKey, lamports: number) {
-    await connection
-      .requestAirdrop(pubkey, lamports)
-      .then((sig) => connection.confirmTransaction(sig));
+    const sig = await connection.requestAirdrop(pubkey, lamports);
+    await connection.confirmTransaction(sig);
   }
 
   async function getUserPda(): Promise<Pda> {
@@ -157,7 +158,7 @@ export function getAPI(authorityKp: web3.Keypair, program: Program<Soldrive>) {
 
   // Create
 
-  async function createUser(signers: web3.Keypair[] = [authorityKp]) {
+  async function createUser(signers: web3.Keypair[] = defaultSigners) {
     const pda = await getUserPda();
     await program.methods
       .createUser()
@@ -174,7 +175,7 @@ export function getAPI(authorityKp: web3.Keypair, program: Program<Soldrive>) {
     id: number,
     parent: number,
     name: string,
-    signers: web3.Keypair[] = [authorityKp]
+    signers: web3.Keypair[] = defaultSigners
   ) {
     const userPda = await getUserPda();
     const folderPda = await getFolderPda(id);
@@ -198,7 +199,7 @@ export function getAPI(authorityKp: web3.Keypair, program: Program<Soldrive>) {
     fileType: FileType,
     access: Access,
     content: string,
-    signers: web3.Keypair[] = [authorityKp]
+    signers: web3.Keypair[] = defaultSigners
   ) {
     const userPda = await getUserPda();
     const filePda = await getFilePda(id);
@@ -228,7 +229,7 @@ export function getAPI(authorityKp: web3.Keypair, program: Program<Soldrive>) {
     id: number,
     parent: number | null,
     name: string | null,
-    signers: web3.Keypair[] = [authorityKp]
+    signers: web3.Keypair[] = defaultSigners
   ) {
     const folderPda = await getFolderPda(id);
     await program.methods
@@ -247,7 +248,7 @@ export function getAPI(authorityKp: web3.Keypair, program: Program<Soldrive>) {
     name: string | null,
     access: Access | null,
     content: string | null,
-    signers: web3.Keypair[] = [authorityKp]
+    signers: web3.Keypair[] = defaultSigners
   ) {
     const filePda = await getFilePda(id);
     const accessEnum = access ? { [access]: {} } : null;
@@ -265,7 +266,7 @@ export function getAPI(authorityKp: web3.Keypair, program: Program<Soldrive>) {
   async function updateFiles(
     ids: number[],
     parent: number,
-    signers: web3.Keypair[] = [authorityKp]
+    signers: web3.Keypair[] = defaultSigners
   ) {
     const instructions = await Promise.all(
       ids.map(async (id) => {
@@ -292,7 +293,7 @@ export function getAPI(authorityKp: web3.Keypair, program: Program<Soldrive>) {
 
   async function removeFolder(
     id: number,
-    signers: web3.Keypair[] = [authorityKp]
+    signers: web3.Keypair[] = defaultSigners
   ) {
     const userPda = await getUserPda();
     const folderPda = await getFolderPda(id);
@@ -305,6 +306,39 @@ export function getAPI(authorityKp: web3.Keypair, program: Program<Soldrive>) {
       })
       .signers(signers)
       .rpc();
+  }
+
+  async function removeFile(
+    id: number,
+    signers: web3.Keypair[] = defaultSigners
+  ) {
+    const userPda = await getUserPda();
+    const filePda = await getFilePda(id);
+    await program.methods
+      .removeFile(id)
+      .accounts({
+        user: userPda.publicKey,
+        file: filePda.publicKey,
+        authority: authority,
+      })
+      .signers(signers)
+      .rpc();
+  }
+
+  async function getSignTransaction(
+    signers: web3.Keypair[] = defaultSigners
+  ): Promise<web3.Transaction> {
+    const tx = await program.methods
+      .sign()
+      .accounts({
+        authority: authority,
+      })
+      .signers(signers)
+      .transaction();
+    // Populated fixed blockhash
+    tx.feePayer = authority;
+    tx.recentBlockhash = bs58.encode(new Uint8Array(32));
+    return tx;
   }
 
   return {
@@ -329,5 +363,8 @@ export function getAPI(authorityKp: web3.Keypair, program: Program<Soldrive>) {
     updateFiles,
     // Remove
     removeFolder,
+    removeFile,
+    // Utils
+    getSignTransaction,
   };
 }

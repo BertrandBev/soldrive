@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("5QEzcF7HPx6z3oN4Fu8cqxGr99oUEGS4uE4MrazyjstF");
 
 fn timestamp() -> i64 {
     let clock: Clock = Clock::get().unwrap();
@@ -20,6 +20,11 @@ fn copy_content(file: &mut AccountInfo, content: &Vec<u8>) -> Result<()> {
 #[program]
 pub mod soldrive {
     use super::*;
+
+    pub fn sign(_ctx: Context<Sign>) -> Result<()> {
+        // Dummy function call to obtain encryption key
+        Ok(())
+    }
 
     pub fn create_user(ctx: Context<CreateUser>) -> Result<()> {
         let user = &mut ctx.accounts.user;
@@ -154,6 +159,12 @@ pub mod soldrive {
 
         Ok(())
     }
+}
+
+#[derive(Accounts)]
+pub struct Sign<'info> {
+    #[account()]
+    pub authority: Signer<'info>,
 }
 
 #[derive(Accounts)]

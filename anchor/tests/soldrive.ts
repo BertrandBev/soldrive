@@ -153,6 +153,10 @@ describe("soldrive", () => {
     assert.equal(secondChildren.files.length, 2);
   });
 
+  it("moves files & folders", async () => {
+    //
+  });
+
   // Move at the end
   // it("remove folder", async () => {
   //   const id = 1;

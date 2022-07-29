@@ -1,0 +1,127 @@
+<script setup lang="ts">
+import { LoginIcon, LogoutIcon } from "@heroicons/vue/outline";
+import { useRoute } from "vue-router";
+import { useUserStore } from "../store/userStore";
+import { ref, computed, watchEffect } from "vue";
+import { useToast } from "vue-toastification";
+
+const toast = useToast();
+const { user, noUser, createUser, fetchUser, fetchEncryptionKey } =
+  useUserStore();
+
+enum State {
+  NO_USER,
+  LOGGED_OUT,
+  NO_ENCRYPTION,
+  LOGGED_IN,
+}
+
+const createUserModal = ref(false);
+const encryptionModal = ref(false);
+
+const isLoading = computed(
+  () =>
+    createUser.isLoading.value ||
+    fetchUser.isLoading.value ||
+    fetchEncryptionKey.isLoading.value
+);
+
+const state = computed(() => {
+  if (noUser.value) return State.NO_USER;
+  else if (!fetchUser.state.value) return State.LOGGED_OUT;
+  else if (!fetchEncryptionKey.state.value) return State.NO_ENCRYPTION;
+  else return State.LOGGED_IN;
+});
+
+const authStr = computed(() => {
+  switch (state.value) {
+    case State.NO_USER:
+      return "Sign up";
+    case State.LOGGED_OUT:
+    case State.NO_ENCRYPTION:
+      return "Login";
+    case State.LOGGED_IN:
+      return "Account";
+  }
+});
+
+function auth() {
+  if (isLoading.value) return;
+  switch (state.value) {
+    case State.NO_USER:
+      createUserModal.value = true;
+      break;
+    case State.LOGGED_OUT:
+      fetchUser.execute();
+      break;
+    case State.NO_ENCRYPTION:
+      encryptionModal.value = true;
+      break;
+    case State.LOGGED_IN:
+      // TODO: Nav to auth page
+      break;
+  }
+}
+
+async function createUserFromModal() {
+  createUserModal.value = false;
+  await createUser.execute();
+  // TODO: extract in a function
+  if (createUser.error.value) {
+    console.log("Error", createUser.error.value);
+    const msg = (createUser.error.value as Error).message as string;
+    toast.error(msg);
+  }
+}
+
+async function fetchEncryptionFromModal() {
+  encryptionModal.value = false;
+  await fetchEncryptionKey.execute();
+  if (fetchEncryptionKey.error.value) {
+    console.log("Error", fetchEncryptionKey.error.value);
+    const msg = (fetchEncryptionKey.error.value as Error).message as string;
+    toast.error(msg);
+  }
+}
+
+const route = useRoute();
+</script>
+
+<template>
+  <div>
+    <!-- Auth button -->
+    <button
+      class="btn btn-ghost gap-2 ml-2"
+      :class="{ loading: isLoading }"
+      @click="auth"
+    >
+      <LoginIcon class="w-5 h-5"></LoginIcon>
+      {{ authStr }}
+    </button>
+  </div>
+  <!-- Account creation modal -->
+  <div class="modal" :class="{ 'modal-open': createUserModal }">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg">Create an account</h3>
+      <p class="py-2">
+        Create a new account to start storing your notes & files
+      </p>
+      <div class="modal-action">
+        <div class="btn" @click="createUserFromModal">Yay!</div>
+      </div>
+    </div>
+  </div>
+  <!-- Encryption modal modal -->
+  <div class="modal" :class="{ 'modal-open': encryptionModal }">
+    <div class="modal-box">
+      <h3 class="font-bold text-lg">Encryption key generation</h3>
+      <p class="py-2">
+        Sign an offline transaction to retrieve your encryption key. This
+        transaction won't be commited to the blockchain
+      </p>
+      <div class="modal-action">
+        <div class="btn" @click="fetchEncryptionFromModal">Yay!</div>
+      </div>
+    </div>
+  </div>
+</template>

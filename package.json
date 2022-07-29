@@ -12,12 +12,16 @@
     "@project-serum/anchor": "^0.25.0",
     "@solana/wallet-adapter-wallets": "^0.16.8",
     "@vueuse/core": "^8.9.4",
+    "bs58": "^5.0.0",
+    "crypto-js": "^4.1.1",
     "solana-wallets-vue": "^0.4.2",
     "vue": "^3.2.37",
-    "vue-router": "4"
+    "vue-router": "4",
+    "vue-toastification": "^2.0.0-rc.5"
   },
   "devDependencies": {
     "@heroicons/vue": "^1.0.6",
+    "@types/crypto-js": "^4.1.1",
     "@vitejs/plugin-vue": "^3.0.0",
     "autoprefixer": "^10.4.7",
     "daisyui": "^2.19.1",
