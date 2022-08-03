@@ -15,7 +15,7 @@ const route = useRoute();
 </script>
 
 <template>
-  <div class="navbar bg-base-100 border-b border-slate-800 sticky top-0 z-50">
+  <div class="navbar bg-base-200 border-b border-slate-800 sticky top-0 z-50">
     <!-- Menu button -->
     <button
       class="btn btn-square btn-ghost lg:hidden"

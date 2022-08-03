@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { LoginIcon, LogoutIcon } from "@heroicons/vue/outline";
+import {
+  LoginIcon,
+  LogoutIcon,
+  UserAddIcon,
+  UserIcon,
+} from "@heroicons/vue/outline";
 import { useRoute } from "vue-router";
 import { useUserStore } from "../store/userStore";
 import { ref, computed, watchEffect } from "vue";
@@ -95,7 +100,12 @@ const route = useRoute();
       :class="{ loading: isLoading }"
       @click="auth"
     >
-      <LoginIcon class="w-5 h-5"></LoginIcon>
+      <UserAddIcon v-if="state == State.NO_USER" class="w-5 h-5"></UserAddIcon>
+      <LoginIcon
+        v-else-if="state == State.LOGGED_OUT || state == State.NO_ENCRYPTION"
+        class="w-5 h-5"
+      ></LoginIcon>
+      <UserIcon v-else class="w-5 h-5"></UserIcon>
       {{ authStr }}
     </button>
   </div>

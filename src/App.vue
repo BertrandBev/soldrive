@@ -14,11 +14,15 @@ function onMenuClicked() {
 <template>
   <div class="drawer drawer-mobile h-screen" id="app">
     <input ref="drawer" id="drawer" type="checkbox" class="drawer-toggle" />
-    <div class="drawer-content flex flex-col">
+    <div class="drawer-content flex flex-col h-full">
       <NavBar :onMenuClicked="onMenuClicked" />
-      <router-view />
+      <div class="w-full h-full">
+        <div class="max-w-3xl" style="margin: auto">
+          <router-view />
+        </div>
+      </div>
+      <Notification></Notification>
     </div>
     <Drawer />
-    <Notification></Notification>
   </div>
 </template>

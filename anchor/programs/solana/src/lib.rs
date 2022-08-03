@@ -50,6 +50,7 @@ pub mod soldrive {
         user.folder_count += 1;
 
         // Init folder
+        folder.owner = *ctx.accounts.authority.key;
         folder.id = user.folder_id;
         folder.created_at = timestamp();
         folder.name = name;
@@ -101,7 +102,8 @@ pub mod soldrive {
         user.file_count += 1;
         user.space_used += max_size;
 
-        // Check args
+        // Init file
+        file.owner = *ctx.accounts.authority.key;
         file.id = user.file_id;
         file.created_at = timestamp();
         file.size = content.len() as u32;
@@ -296,6 +298,7 @@ impl User {
 
 #[account]
 pub struct Folder {
+    pub owner: Pubkey,
     pub id: u32, // 1 indexed
     pub created_at: i64,
     pub parent: u32,
@@ -307,6 +310,7 @@ impl Folder {
     const NAME_MAX_LEN: usize = 32;
 
     const SIZE: usize = 8 // discriminator
+        + 32 // owner
         + 4 // id
         + 8 // created_at
         + 4 // parent
@@ -329,6 +333,7 @@ pub enum Access {
 
 #[account]
 pub struct File {
+    pub owner: Pubkey,
     pub id: u32,
     pub created_at: i64,
     pub parent: u32,
@@ -349,6 +354,7 @@ impl File {
 
     fn size(byte_count: u32) -> usize {
         8                                 // discriminator
+        + 32                              // owner
         + 4                               // id
         + 8                               // created_at
         + 4                               // parent

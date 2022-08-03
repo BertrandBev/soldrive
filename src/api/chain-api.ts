@@ -26,6 +26,11 @@ const programID = new PublicKey(address);
 
 // Re-export types
 export type Keyed<T> = solApi.Keyed<T>;
+export type File = solApi.File;
+export type Folder = solApi.Folder;
+export type User = solApi.User;
+export type FileType = solApi.FileType;
+export type Access = solApi.Access;
 
 export function _createChainAPI() {
   const wallet = LOCAL_WALLET

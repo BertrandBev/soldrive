@@ -26,7 +26,7 @@ const typeProg = null as Program<Soldrive>;
 export type User = Awaited<ReturnType<typeof typeProg.account.user.fetch>>;
 export type Folder = Awaited<ReturnType<typeof typeProg.account.folder.fetch>>;
 type FileRaw = Awaited<ReturnType<typeof typeProg.account.file.fetch>>;
-export type File = FileRaw & { content: string };
+export type File = FileRaw & { content: Buffer };
 
 export type Access = "private" | "publicRead" | "publicReadWrite";
 export type FileType = "file" | "note";
@@ -93,9 +93,9 @@ export function getAPI(
       accountInfo.data
     ) as File;
     if (withContent) {
-      decoded.content = accountInfo.data
-        .subarray(accountInfo.data.length - decoded.size)
-        .toString("utf-8");
+      decoded.content = accountInfo.data.subarray(
+        accountInfo.data.length - decoded.size
+      );
     }
     return decoded;
   }
@@ -136,7 +136,7 @@ export function getAPI(
     const folderPromise = program.account.folder.all([
       {
         memcmp: {
-          offset: 8 + 4 + 8, // discriminator + id + created_at
+          offset: 8 + 32 + 4 + 8, // discriminator + owner + id + created_at
           bytes: bs58.encode(u32Bytes(id)),
         },
       },
@@ -145,7 +145,7 @@ export function getAPI(
       [
         {
           memcmp: {
-            offset: 8 + 4 + 8, // discriminator + id + created_at
+            offset: 8 + 32 + 4 + 8, // discriminator + owner + id + created_at
             bytes: bs58.encode(u32Bytes(id)),
           },
         },
@@ -198,12 +198,11 @@ export function getAPI(
     name: string,
     fileType: FileType,
     access: Access,
-    content: string,
+    content: Buffer,
     signers: web3.Keypair[] = defaultSigners
   ) {
     const userPda = await getUserPda();
     const filePda = await getFilePda(id);
-    const val = Buffer.from(content, "utf8");
     await program.methods
       .createFile(
         max_size,
@@ -211,7 +210,7 @@ export function getAPI(
         name,
         { [fileType]: {} },
         { [access]: {} },
-        val
+        content
       )
       .accounts({
         user: userPda.publicKey,
@@ -247,14 +246,13 @@ export function getAPI(
     parent: number | null,
     name: string | null,
     access: Access | null,
-    content: string | null,
+    content: Buffer | null,
     signers: web3.Keypair[] = defaultSigners
   ) {
     const filePda = await getFilePda(id);
     const accessEnum = access ? { [access]: {} } : null;
-    const contentBuf = content ? Buffer.from(content, "utf8") : null;
     return program.methods
-      .updateFile(id, parent, name, accessEnum, contentBuf)
+      .updateFile(id, parent, name, accessEnum, content)
       .accounts({
         file: filePda.publicKey,
         authority: authority,
