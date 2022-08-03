@@ -5,8 +5,12 @@ import EditFile from "./components/EditFile.vue";
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
   routes: [
-    { path: "/", component: Home, meta: { name: "Home" } },
-    { path: "/file", component: EditFile, meta: { name: "File" } },
+    { path: "/", component: Home, meta: { name: "SolDrive", hideBack: true } },
+    {
+      path: "/file",
+      component: EditFile,
+      meta: { name: "File" },
+    },
   ],
 });
 

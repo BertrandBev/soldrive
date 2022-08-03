@@ -1,5 +1,5 @@
 import { createGlobalState, useAsyncState } from "@vueuse/core";
-import { ref, watchEffect } from "vue";
+import { ref, watchEffect, computed } from "vue";
 import { useChainApi } from "../api/chain-api";
 import axios from "axios";
 import CryptoJS from "crypto-js";
@@ -8,6 +8,13 @@ import bs58 from "bs58";
 const ENCRYPTION_KEY = "encryptionKey";
 
 function createEncryptionTransaction() {}
+
+export enum AuthState {
+  NO_USER,
+  LOGGED_OUT,
+  NO_ENCRYPTION,
+  LOGGED_IN,
+}
 
 function createUserStore() {
   const { api, wallet } = useChainApi();
@@ -89,12 +96,25 @@ function createUserStore() {
     }
   });
 
+  const authState = computed(() => {
+    if (noUser.value) return AuthState.NO_USER;
+    else if (!fetchUser.state.value) return AuthState.LOGGED_OUT;
+    else if (!fetchEncryptionKey.state.value) return AuthState.NO_ENCRYPTION;
+    else return AuthState.LOGGED_IN;
+  });
+
+  const isLoggedIn = computed(() => {
+    return authState.value == AuthState.LOGGED_IN;
+  });
+
   return {
     fetchUser,
     createUser,
     fetchEncryptionKey,
     noUser,
     user: fetchUser.state,
+    authState,
+    isLoggedIn,
     encrypt,
     decrypt,
   };

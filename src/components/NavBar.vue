@@ -24,16 +24,19 @@ const route = useRoute();
       <MenuIcon class="w-5 h-5" />
     </button>
     <!-- Back button -->
-    <button class="btn btn-square btn-ghost" @click="() => $router.back()">
+    <button
+      v-if="!route.meta.hideBack"
+      class="btn btn-square btn-ghost"
+      @click="() => $router.back()"
+    >
       <ChevronLeftIcon class="w-5 h-5" />
     </button>
-    <div class="">
-      <a class="btn btn-ghost normal-case text-xl">
-        {{ route.meta.name }}
-      </a>
+    <!-- Name -->
+    <div class="normal-case text-xl font-bold px-4">
+      {{ route.meta.name }}
     </div>
     <div class="flex-1"></div>
-    <div class="">
+    <div>
       <WalletMultiButton dark></WalletMultiButton>
     </div>
     <AuthButton class="ml-2"></AuthButton>

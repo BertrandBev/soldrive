@@ -6,20 +6,13 @@ import {
   UserIcon,
 } from "@heroicons/vue/outline";
 import { useRoute } from "vue-router";
-import { useUserStore } from "../store/userStore";
+import { useUserStore, AuthState } from "../store/userStore";
 import { ref, computed, watchEffect } from "vue";
 import { useToast } from "vue-toastification";
 
 const toast = useToast();
-const { user, noUser, createUser, fetchUser, fetchEncryptionKey } =
+const { user, noUser, createUser, fetchUser, fetchEncryptionKey, authState } =
   useUserStore();
-
-enum State {
-  NO_USER,
-  LOGGED_OUT,
-  NO_ENCRYPTION,
-  LOGGED_IN,
-}
 
 const createUserModal = ref(false);
 const encryptionModal = ref(false);
@@ -31,38 +24,31 @@ const isLoading = computed(
     fetchEncryptionKey.isLoading.value
 );
 
-const state = computed(() => {
-  if (noUser.value) return State.NO_USER;
-  else if (!fetchUser.state.value) return State.LOGGED_OUT;
-  else if (!fetchEncryptionKey.state.value) return State.NO_ENCRYPTION;
-  else return State.LOGGED_IN;
-});
-
 const authStr = computed(() => {
-  switch (state.value) {
-    case State.NO_USER:
+  switch (authState.value) {
+    case AuthState.NO_USER:
       return "Sign up";
-    case State.LOGGED_OUT:
-    case State.NO_ENCRYPTION:
+    case AuthState.LOGGED_OUT:
+    case AuthState.NO_ENCRYPTION:
       return "Login";
-    case State.LOGGED_IN:
+    case AuthState.LOGGED_IN:
       return "Account";
   }
 });
 
 function auth() {
   if (isLoading.value) return;
-  switch (state.value) {
-    case State.NO_USER:
+  switch (authState.value) {
+    case AuthState.NO_USER:
       createUserModal.value = true;
       break;
-    case State.LOGGED_OUT:
+    case AuthState.LOGGED_OUT:
       fetchUser.execute();
       break;
-    case State.NO_ENCRYPTION:
+    case AuthState.NO_ENCRYPTION:
       encryptionModal.value = true;
       break;
-    case State.LOGGED_IN:
+    case AuthState.LOGGED_IN:
       // TODO: Nav to auth page
       break;
   }
@@ -100,9 +86,15 @@ const route = useRoute();
       :class="{ loading: isLoading }"
       @click="auth"
     >
-      <UserAddIcon v-if="state == State.NO_USER" class="w-5 h-5"></UserAddIcon>
+      <UserAddIcon
+        v-if="authState == AuthState.NO_USER"
+        class="w-5 h-5"
+      ></UserAddIcon>
       <LoginIcon
-        v-else-if="state == State.LOGGED_OUT || state == State.NO_ENCRYPTION"
+        v-else-if="
+          authState == AuthState.LOGGED_OUT ||
+          authState == AuthState.NO_ENCRYPTION
+        "
         class="w-5 h-5"
       ></LoginIcon>
       <UserIcon v-else class="w-5 h-5"></UserIcon>
