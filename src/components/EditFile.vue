@@ -117,7 +117,6 @@ const {
   null,
   {
     onError: (e) => {
-      console.error("SAVE ERROR", e);
       toast.error((e as Error).message);
     },
     immediate: false,
@@ -144,6 +143,7 @@ watchEffect(() => {
   const msg = data.value.content;
   try {
     const buf = encrypt(msg, data.value.access == "private");
+    console.log("encrypted", buf);
     const decrypted = decrypt(buf, data.value.access == "private");
     if (decrypted != msg) throw new Error("Encryption error");
     data.value.contentBuffer = buf;

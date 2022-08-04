@@ -8,12 +8,15 @@ import {
 } from "@heroicons/vue/outline";
 import { useRoute } from "vue-router";
 import Explorer from "./Explorer.vue";
+import EditFolderModal from "./EditFolderModal.vue";
+
+const editFolderModal = ref<null | InstanceType<typeof EditFolderModal>>(null);
 </script>
 
 <template>
   <div class="w-full h-full flex flex-col">
     <!-- Toolbar -->
-    <div class="w-full flex mt-2">
+    <div class="w-full flex mt-2 mb-2">
       <!-- Filter -->
       <button class="btn btn-ghost gap-2">
         Filter
@@ -22,7 +25,7 @@ import Explorer from "./Explorer.vue";
       <!-- Spacer -->
       <div class="w-full"></div>
       <!-- Add button -->
-      <button class="btn btn-ghost gap-2" @click="$router.push('file')">
+      <button class="btn btn-ghost gap-2" @click="editFolderModal?.open()">
         New folder
         <FolderAddIcon class="w-5 h-5"></FolderAddIcon>
       </button>
@@ -34,5 +37,7 @@ import Explorer from "./Explorer.vue";
     </div>
     <!-- Explorer -->
     <Explorer></Explorer>
+    <!-- Folder modal -->
+    <EditFolderModal ref="editFolderModal"></EditFolderModal>
   </div>
 </template>
