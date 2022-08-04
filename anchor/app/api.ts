@@ -226,8 +226,8 @@ export function getAPI(
 
   async function updateFolder(
     id: number,
-    parent: number | null,
-    name: string | null,
+    parent?: number,
+    name?: string,
     signers: web3.Keypair[] = defaultSigners
   ) {
     const folderPda = await getFolderPda(id);
@@ -243,10 +243,10 @@ export function getAPI(
 
   async function updateFile(
     id: number,
-    parent: number | null,
-    name: string | null,
-    access: Access | null,
-    content: Buffer | null,
+    parent?: number,
+    name?: string,
+    access?: Access,
+    content?: Buffer,
     signers: web3.Keypair[] = defaultSigners
   ) {
     const filePda = await getFilePda(id);

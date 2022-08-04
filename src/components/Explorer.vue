@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useAsyncState } from "@vueuse/core";
-import { useChainApi, File } from "../api/chain-api";
+import { useChainApi, Folder } from "../api/chain-api";
 import { useUserStore } from "../store/userStore";
 
 import { ref, watchEffect, onMounted, computed } from "vue";
@@ -8,9 +8,13 @@ import Loader from "./utils/Loader.vue";
 
 // File icons
 import textLogo from "../assets/files/text.png";
+import FileTile from "./widgets/FileTile.vue";
+import FolderTile from "./widgets/FolderTile.vue";
+import EditFolderModal from "./EditFolderModal.vue";
 
 const { api, wallet } = useChainApi();
 const { isLoggedIn } = useUserStore();
+const editFolderModal = ref<null | InstanceType<typeof EditFolderModal>>(null);
 
 const id = 0;
 
@@ -48,13 +52,21 @@ const isEmpty = computed(() => {
   );
 });
 
-function fileIcon(file: File) {
-  return textLogo;
+function editFolder(folder?: Folder) {
+  console.log("edit folder", folder);
+  editFolderModal.value?.open(folder);
 }
 
-function handler() {
-  console.log('handler');
+function removeFolder(folder: Folder) {
+  // Confirmation modal!
 }
+
+function onFolderUpdated() {
+  console.log('on folder updated!');
+  fetchChildren.execute();
+}
+
+defineExpose({ editFolder, removeFolder });
 </script>
 
 <template>
@@ -70,36 +82,21 @@ function handler() {
     <!-- Files -->
     <div v-else class="flex flex-wrap gap-3">
       <!-- Folder -->
-      <div
+      <FolderTile
         v-for="folder in folders"
-        class="card card-bordered border-slate-500 w-[180px] h-[180px] items-center"
-        @contextmenu.prevent="handler"
+        :folder="folder.account"
+        :onEdit="() => editFolder(folder.account)"
+        :onRemove="() => removeFolder(folder.account)"
       >
-        <!-- Icon -->
-        <div class="flex-1 flex items-center">
-          <img src="../assets/files/folder.png" class="w-[96px] h-[96px]" />
-        </div>
-        <!-- Name -->
-        <div class="flex p-2 items-center">
-          <div>{{ folder.account.name }}</div>
-        </div>
-      </div>
+      </FolderTile>
       <!-- File -->
-      <div
-        v-for="file in files"
-        class="card card-bordered border-slate-500 w-[180px] h-[180px] items-center"
-      >
-        <!-- Icon -->
-        <div class="flex-1 flex items-center">
-          <img :src="fileIcon(file.account)" class="w-[96px] h-[96px]" />
-        </div>
-        <!-- Name -->
-        <div class="flex p-2 items-center">
-          <div>{{ file.account.name }}</div>
-        </div>
-      </div>
+      <FileTile v-for="file in files" :file="file.account"> </FileTile>
     </div>
     <!-- Edit folder modal -->
-    <EditFolderModal></EditFolderModal>
+    <EditFolderModal
+      ref="editFolderModal"
+      :onFolderUpdated="onFolderUpdated"
+    ></EditFolderModal>
+    <!-- Remove folder modal -->
   </div>
 </template>

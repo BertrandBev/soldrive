@@ -12,6 +12,11 @@ const { api, wallet, connection } = useChainApi();
 const toast = useToast();
 const { user, fetchUser, encrypt, decrypt } = useUserStore();
 
+//
+const props = defineProps<{
+  onFolderUpdated?: () => {};
+}>();
+
 // Folder data
 const data = ref({
   id: -1,
@@ -63,8 +68,9 @@ const { isLoading: folderSaving, execute: saveFolder } = useAsyncState(
       );
       toast.success("Folder successfully updated!");
     }
-    // Close modal
+    // Close modal & callback
     modalOpen.value = false;
+    if (props.onFolderUpdated) props.onFolderUpdated();
   },
   null,
   {
@@ -75,7 +81,7 @@ const { isLoading: folderSaving, execute: saveFolder } = useAsyncState(
   }
 );
 
-function open(folder: Folder | undefined = undefined) {
+async function open(folder: Folder | undefined = undefined) {
   if (folder) {
     data.value.id = folder.id;
     data.value.name = folder.name;
@@ -85,6 +91,7 @@ function open(folder: Folder | undefined = undefined) {
     data.value.name = "";
     data.value.parent = 0;
   }
+  modalOpen.value = true;
 }
 
 defineExpose({ open });

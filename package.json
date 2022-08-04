@@ -14,8 +14,10 @@
     "@vueuse/core": "^8.9.4",
     "bs58": "^5.0.0",
     "crypto-js": "^4.1.1",
+    "popper.js": "^1.16.1",
     "solana-wallets-vue": "^0.4.2",
     "vue": "^3.2.37",
+    "vue-click-outside": "^1.1.0",
     "vue-router": "4",
     "vue-toastification": "^2.0.0-rc.5"
   },
