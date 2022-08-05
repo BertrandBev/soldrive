@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useAsyncState } from "@vueuse/core";
-import { useChainApi, Folder } from "../api/chain-api";
+import { useChainApi, Folder, File } from "../api/chain-api";
 import { useUserStore } from "../store/userStore";
 
 import { ref, watchEffect, onMounted, computed } from "vue";
 import Loader from "./utils/Loader.vue";
 import { folderId } from "../router";
+import { useRouter } from "vue-router";
 
 // File icons
 import FileTile from "./widgets/FileTile.vue";
@@ -15,6 +16,7 @@ import PathBar from "./widgets/PathBar.vue";
 
 const { api, wallet } = useChainApi();
 const { isLoggedIn } = useUserStore();
+const router = useRouter();
 const editFolderModal = ref<null | InstanceType<typeof EditFolderModal>>(null);
 
 const props = defineProps<{
@@ -68,6 +70,16 @@ function removeFolder(folder: Folder) {
   // Confirmation modal!
 }
 
+function editFile(file?: File) {
+  // editFileModal.value?.open(parent, file);
+  const folder = folderId(props.path || []);
+  router.push({ path: "/file", query: { folder, id: file?.id } });
+}
+
+function removeFile(file: File) {
+  // Confirmation modal!
+}
+
 function onFolderUpdated() {
   console.log("on folder updated!");
   fetchChildren.execute();
@@ -101,7 +113,13 @@ defineExpose({ editFolder, removeFolder });
       >
       </FolderTile>
       <!-- File -->
-      <FileTile v-for="file in files" :file="file.account"> </FileTile>
+      <FileTile
+        v-for="file in files"
+        :file="file.account"
+        :onEdit="() => editFile(file.account)"
+        :onRemove="() => removeFile(file.account)"
+      >
+      </FileTile>
     </div>
     <!-- Edit folder modal -->
     <EditFolderModal

@@ -43,9 +43,13 @@ const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
       } else {
         // Populate fields
         data.value.loaded = true;
-        data.value.name = res?.name;
-        data.value.parent = res?.parent;
-        data.value.access = res?.access;
+        data.value.name = res.name;
+        data.value.parent = res.parent;
+        data.value.access = res.access;
+        data.value.content = decrypt(
+          res.content,
+          data.value.access == "private"
+        );
       }
     }
   },
@@ -152,7 +156,6 @@ watchEffect(() => {
   const msg = data.value.content;
   try {
     const buf = encrypt(msg, data.value.access == "private");
-    console.log("encrypted", buf);
     const decrypted = decrypt(buf, data.value.access == "private");
     if (decrypted != msg) throw new Error("Encryption error");
     data.value.contentBuffer = buf;
