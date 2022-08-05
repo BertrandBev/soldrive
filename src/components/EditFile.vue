@@ -3,6 +3,7 @@ import { ref, watchEffect, computed, onMounted } from "vue";
 import { PencilIcon, CheckIcon } from "@heroicons/vue/outline";
 import { useChainApi, FileType, Access } from "../api/chain-api";
 import { useAsyncState, useThrottleFn } from "@vueuse/core";
+import { useRouter } from "vue-router";
 import * as anchor from "@project-serum/anchor";
 import { useToast } from "vue-toastification";
 import web3 = anchor.web3;
@@ -11,9 +12,11 @@ import { useUserStore } from "../store/userStore";
 const { api, wallet, connection } = useChainApi();
 const toast = useToast();
 const { user, fetchUser, encrypt, decrypt } = useUserStore();
+const router = useRouter();
 
 const props = defineProps<{
   id?: number;
+  folder: number;
 }>();
 
 // File data
@@ -27,23 +30,27 @@ const data = ref({
 });
 
 // Get file
-const {
-  isLoading: fileLoading,
-  execute: fetchFile,
-  error: fileLoadingError,
-} = useAsyncState(async () => {
-  if (!props.id) return;
-  const res = await api.value?.fetchFile(props.id, true);
-  if (!res) {
-    toast.error(`Note ${props.id} not found`);
-  } else {
-    // Populate fields
-    data.value.loaded = true;
-    data.value.name = res?.name;
-    data.value.parent = res?.parent;
-    // data.value.access = res?.access;
-  }
-}, null);
+const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
+  async () => {
+    if (!props.id) {
+      // New file
+      data.value.parent = props.folder;
+    } else {
+      // Existing file
+      const res = await api.value?.fetchFile(props.id, true);
+      if (!res) {
+        toast.error(`Note ${props.id} not found`);
+      } else {
+        // Populate fields
+        data.value.loaded = true;
+        data.value.name = res?.name;
+        data.value.parent = res?.parent;
+        data.value.access = res?.access;
+      }
+    }
+  },
+  null
+);
 
 const isNew = computed(() => {
   return props.id == undefined;
@@ -113,6 +120,8 @@ const {
       );
       toast.success("File successfully updated!");
     }
+    // Nav back
+    router.go(-1);
   },
   null,
   {

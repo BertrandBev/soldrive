@@ -2,6 +2,7 @@
 import { useAsyncState } from "@vueuse/core";
 import { useChainApi, Folder } from "../../api/chain-api";
 import { useUserStore } from "../../store/userStore";
+import { useRouter, useRoute } from "vue-router";
 
 import { ref, watchEffect, onMounted, computed } from "vue";
 import Loader from "../utils/Loader.vue";
@@ -10,8 +11,10 @@ import ContextMenu from "../utils/ContextMenu.vue";
 // File icons
 const { api, wallet } = useChainApi();
 const { isLoggedIn } = useUserStore();
+const router = useRouter();
 
 const props = defineProps<{
+  path: string[];
   folder: Folder;
   onEdit: () => void;
   onRemove: () => void;
@@ -27,7 +30,8 @@ function handler(clickData: MouseEvent) {
 }
 
 function onClick() {
-  console.log("click!");
+  const path = [...props.path, props.folder.id].join("/");
+  router.push({ path: `/explorer/${path}` });
 }
 </script>
 
@@ -37,6 +41,7 @@ function onClick() {
     <div
       class="card card-bordered border-slate-500 w-[180px] h-[180px] items-center overflow-visible btn"
       @contextmenu.prevent="(ev) => handler(ev)"
+      @click="onClick()"
     >
       <!-- Icon -->
       <div class="flex-1 flex items-center">
@@ -44,7 +49,7 @@ function onClick() {
       </div>
       <!-- Name -->
       <div class="flex p-2 items-center">
-        <div>{{ folder.name }}</div>
+        {{ folder.name }}
       </div>
     </div>
     <!-- Context -->

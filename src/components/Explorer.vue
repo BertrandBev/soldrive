@@ -5,6 +5,7 @@ import { useUserStore } from "../store/userStore";
 
 import { ref, watchEffect, onMounted, computed } from "vue";
 import Loader from "./utils/Loader.vue";
+import { folderId } from "../router";
 
 // File icons
 import FileTile from "./widgets/FileTile.vue";
@@ -17,30 +18,28 @@ const { isLoggedIn } = useUserStore();
 const editFolderModal = ref<null | InstanceType<typeof EditFolderModal>>(null);
 
 const props = defineProps<{
-  path?: string[];
+  path: string[];
 }>();
-
-onMounted(() => {
-  console.log("path", props.path);
-});
-
-const id = 0;
 
 // Fetch
 const fetchChildren = useAsyncState(
   async () => {
     if (!api.value) return;
-    return await api.value.fetchChildren(id, true);
+    const folder = folderId(props.path);
+    return await api.value.fetchChildren(folder, true);
   },
   null,
-  { immediate: false }
+  {
+    immediate: false,
+    onError: (e) => {
+      console.error(e);
+    },
+  }
 );
 
 watchEffect(async () => {
   if (isLoggedIn.value) {
-    console.log("FETCH CHILDREN!");
     await fetchChildren.execute();
-    console.log("RES: ", fetchChildren.state.value);
   }
 });
 
@@ -61,8 +60,8 @@ const isEmpty = computed(() => {
 });
 
 function editFolder(folder?: Folder) {
-  console.log("edit folder", folder);
-  editFolderModal.value?.open(folder);
+  const parent = folderId(props.path);
+  editFolderModal.value?.open(parent, folder);
 }
 
 function removeFolder(folder: Folder) {
@@ -86,7 +85,8 @@ defineExpose({ editFolder, removeFolder });
       v-if="fetchChildren.isLoading.value || isEmpty"
       class="w-full h-[256px] flex items-center justify-center"
     >
-      <Loader v-if="fetchChildren.isLoading" class="w-5 h-5"></Loader>
+      <Loader v-if="fetchChildren.isLoading.value" class="w-5 h-5"></Loader>
+      <div v-else-if="fetchChildren.error.value">File loading error</div>
       <div v-else-if="isEmpty">The directory is empty</div>
     </div>
     <!-- Files -->
@@ -94,6 +94,7 @@ defineExpose({ editFolder, removeFolder });
       <!-- Folder -->
       <FolderTile
         v-for="folder in folders"
+        :path="props.path"
         :folder="folder.account"
         :onEdit="() => editFolder(folder.account)"
         :onRemove="() => removeFolder(folder.account)"

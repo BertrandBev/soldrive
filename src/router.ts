@@ -20,9 +20,15 @@ const router = VueRouter.createRouter({
     {
       path: "/file",
       component: EditFile,
+      props: (route) => route.query,
       meta: { name: "File" },
     },
   ],
 });
+
+export function folderId(path: string[]) {
+  if (path.length == 0) return 0;
+  return parseInt(path[path.length - 1]) || 0;
+}
 
 export default router;

@@ -2,16 +2,16 @@
 import { MenuIcon, ChevronLeftIcon, LoginIcon } from "@heroicons/vue/outline";
 import { DotsHorizontalIcon } from "@heroicons/vue/solid";
 import { WalletMultiButton } from "solana-wallets-vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import AuthButton from "./AuthButton.vue";
+
+const route = useRoute();
 
 const props = defineProps<{
   onMenuClicked: () => void;
 }>();
 
 function login() {}
-
-const route = useRoute();
 </script>
 
 <template>

@@ -23,8 +23,8 @@ export function createCache(api: SolApi): SolApi {
     if (ids == undefined) return fetchFolder(ids);
     else {
       const fetchIds = ids.filter((id) => !folders[id]);
-      const fetched = await fetchFolder(ids);
-      fetched.forEach((folder, idx) => (folders[fetchIds[idx]] = folder));
+      const fetched = await fetchFolder(fetchIds);
+      fetched.forEach((folder) => (folders[folder.account.id] = folder));
       return ids.map((id) => folders[id]);
     }
   };

@@ -81,7 +81,7 @@ const { isLoading: folderSaving, execute: saveFolder } = useAsyncState(
   }
 );
 
-async function open(folder: Folder | undefined = undefined) {
+async function open(parent: number, folder: Folder | undefined = undefined) {
   if (folder) {
     data.value.id = folder.id;
     data.value.name = folder.name;
@@ -89,7 +89,7 @@ async function open(folder: Folder | undefined = undefined) {
   } else {
     data.value.id = -1;
     data.value.name = "";
-    data.value.parent = 0;
+    data.value.parent = parent;
   }
   modalOpen.value = true;
 }

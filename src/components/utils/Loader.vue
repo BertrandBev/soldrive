@@ -3,6 +3,7 @@
 </template>
 
 <style>
+/* TODO: scale */
 .loader {
   width: 48px;
   height: 48px;

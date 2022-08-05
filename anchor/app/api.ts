@@ -26,7 +26,7 @@ const typeProg = null as Program<Soldrive>;
 export type User = Awaited<ReturnType<typeof typeProg.account.user.fetch>>;
 export type Folder = Awaited<ReturnType<typeof typeProg.account.folder.fetch>>;
 type FileRaw = Awaited<ReturnType<typeof typeProg.account.file.fetch>>;
-export type File = FileRaw & { content: Buffer };
+export type File = FileRaw & { content: Buffer; access: Access };
 
 export type Access = "private" | "publicRead" | "publicReadWrite";
 export type FileType = "file" | "note";
@@ -102,6 +102,14 @@ export function getAPI(
       "File",
       accountInfo.data
     ) as File;
+    // Update access
+    const access = decoded.access;
+    Object.keys(access).forEach((key) => {
+      const camelCase = key[0].toLowerCase() + key.slice(1);
+      decoded.access = camelCase as Access;
+    });
+
+    // Fetch content
     if (withContent) {
       decoded.content = accountInfo.data.subarray(
         accountInfo.data.length - decoded.size
