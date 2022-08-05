@@ -10,6 +10,10 @@ import { useRoute } from "vue-router";
 import Explorer from "./Explorer.vue";
 
 const explorer = ref<null | InstanceType<typeof Explorer>>(null);
+
+const props = defineProps<{
+  path?: string[];
+}>();
 </script>
 
 <template>
@@ -35,6 +39,6 @@ const explorer = ref<null | InstanceType<typeof Explorer>>(null);
       </button>
     </div>
     <!-- Explorer -->
-    <Explorer ref="explorer"></Explorer>
+    <Explorer ref="explorer" :path="props.path"></Explorer>
   </div>
 </template>

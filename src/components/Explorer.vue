@@ -7,14 +7,22 @@ import { ref, watchEffect, onMounted, computed } from "vue";
 import Loader from "./utils/Loader.vue";
 
 // File icons
-import textLogo from "../assets/files/text.png";
 import FileTile from "./widgets/FileTile.vue";
 import FolderTile from "./widgets/FolderTile.vue";
 import EditFolderModal from "./EditFolderModal.vue";
+import PathBar from "./widgets/PathBar.vue";
 
 const { api, wallet } = useChainApi();
 const { isLoggedIn } = useUserStore();
 const editFolderModal = ref<null | InstanceType<typeof EditFolderModal>>(null);
+
+const props = defineProps<{
+  path?: string[];
+}>();
+
+onMounted(() => {
+  console.log("path", props.path);
+});
 
 const id = 0;
 
@@ -62,7 +70,7 @@ function removeFolder(folder: Folder) {
 }
 
 function onFolderUpdated() {
-  console.log('on folder updated!');
+  console.log("on folder updated!");
   fetchChildren.execute();
 }
 
@@ -70,7 +78,9 @@ defineExpose({ editFolder, removeFolder });
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col">
+    <!-- PathBar -->
+    <PathBar :path="props.path"></PathBar>
     <!-- Loader -->
     <div
       v-if="fetchChildren.isLoading.value || isEmpty"

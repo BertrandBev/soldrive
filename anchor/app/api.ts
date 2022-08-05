@@ -80,8 +80,18 @@ export function getAPI(
     return program.account.folder.fetch(pda.publicKey);
   }
 
-  async function fetchFolders(): Promise<Keyed<Folder>[]> {
-    return program.account.folder.all();
+  async function fetchFolders(
+    ids: number[] | undefined
+  ): Promise<Keyed<Folder>[]> {
+    if (ids == undefined) return program.account.folder.all();
+    else {
+      const pdas = await Promise.all(ids.map((id) => getFolderPda(id)));
+      const addresses = pdas.map((pda) => pda.publicKey);
+      const folders = await program.account.folder.fetchMultiple(addresses);
+      return folders.map((folder, idx) => {
+        return { account: folder, publicKey: addresses[idx] } as Keyed<Folder>;
+      });
+    }
   }
 
   function decodeFileAccount(

@@ -14,7 +14,7 @@ const { user, fetchUser, encrypt, decrypt } = useUserStore();
 
 //
 const props = defineProps<{
-  onFolderUpdated?: () => {};
+  onFolderUpdated?: () => void;
 }>();
 
 // Folder data

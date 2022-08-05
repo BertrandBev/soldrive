@@ -7,7 +7,7 @@ import { ref, watchEffect, onMounted, computed } from "vue";
 import Loader from "../utils/Loader.vue";
 
 // File icons
-import textLogo from "../../assets/files/text.png";
+import textLogo from "../../assets/files/word.png";
 
 const { api, wallet } = useChainApi();
 const { isLoggedIn } = useUserStore();
@@ -28,11 +28,11 @@ function handler() {
 <template>
   <!-- File -->
   <div
-    class="card card-bordered border-slate-500 w-[180px] h-[180px] items-center"
+    class="card card-bordered shadow-xl border-slate-500 w-[180px] h-[180px] items-center"
   >
     <!-- Icon -->
     <div class="flex-1 flex items-center">
-      <img :src="fileIcon()" class="w-[96px] h-[96px]" />
+      <img :src="fileIcon()" class="w-[72px] h-[72px]" />
     </div>
     <!-- Name -->
     <div class="flex p-2 items-center">

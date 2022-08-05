@@ -6,7 +6,7 @@
       v-show="opened"
       @contextmenu.capture.prevent
     >
-      <ul class="menu bg-slate-800 rounded-box">
+      <ul class="menu bg-secondary text-secondary-content rounded-box">
         <slot></slot>
       </ul>
     </div>
@@ -14,14 +14,15 @@
 </template>
 
 <script setup lang="ts">
-import Popper from "popper.js";
 import { ref, nextTick, onBeforeUnmount } from "vue";
+import { openPopper, closePopper, ReferenceObject } from "./popper";
+import { onKeyStroke } from "@vueuse/core";
 
 const opened = ref(false);
-let popper: Popper | null = null;
+
 const container = ref(null as Element | null);
 
-function referenceObject(evt: MouseEvent): Popper.ReferenceObject {
+function referenceObject(evt: MouseEvent): ReferenceObject {
   const left = evt.clientX;
   const top = evt.clientY;
   console.log(top, left);
@@ -43,29 +44,23 @@ function referenceObject(evt: MouseEvent): Popper.ReferenceObject {
 }
 
 function open(evt: MouseEvent) {
+  openPopper(referenceObject(evt), container.value!, nextTick);
   opened.value = true;
-  if (popper) {
-    popper.destroy();
-  }
-  popper = new Popper(referenceObject(evt), container.value as Element, {
-    placement: "bottom-start",
-    positionFixed: true,
-  });
-
-  // Recalculate position
-  nextTick(() => {
-    popper!.scheduleUpdate();
-  });
 }
 
 function close() {
+  closePopper();
   opened.value = false;
 }
 
 onBeforeUnmount(() => {
-  if (popper) {
-    popper!.destroy();
-    popper = null;
+  close();
+});
+
+onKeyStroke("Escape", (e) => {
+  if (opened.value) {
+    e.preventDefault();
+    close();
   }
 });
 

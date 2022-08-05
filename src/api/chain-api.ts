@@ -10,6 +10,7 @@ import idl from "../../anchor/target/idl/soldrive.json";
 import { Soldrive } from "../../anchor/target/types/soldrive";
 // eslint-disable-next-line
 import * as solApi from "../../anchor/app/api";
+import { createCache } from "./cache";
 const address = "5QEzcF7HPx6z3oN4Fu8cqxGr99oUEGS4uE4MrazyjstF";
 
 // Import key for dev
@@ -64,15 +65,19 @@ export function _createChainAPI() {
       : null
   );
 
-  const api = computed(() =>
-    program.value && wallet.value?.publicKey
-      ? solApi.getAPI(
-          wallet.value.publicKey,
-          program.value,
-          LOCAL_WALLET ? [keypair] : []
-        )
-      : null
-  );
+  const api = computed(() => {
+    // Create api & extend it with cache
+    if (program.value && wallet.value?.publicKey) {
+      const api = solApi.getAPI(
+        wallet.value.publicKey,
+        program.value,
+        LOCAL_WALLET ? [keypair] : []
+      );
+      return createCache(api);
+    } else {
+      return null;
+    }
+  });
 
   // Airdrop if needed
   let airdropped = false;
