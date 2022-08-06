@@ -38,7 +38,7 @@ function onClick() {
   <div>
     <!-- Card -->
     <div
-      class="card card-bordered border-slate-500 w-[180px] h-[180px] items-center overflow-visible btn"
+      class="card card-bordered btn btn-ghost border-slate-500 w-[180px] h-[180px] items-center overflow-visible"
       @contextmenu.prevent="(ev) => handler(ev)"
       @click="onClick()"
     >

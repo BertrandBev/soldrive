@@ -24,6 +24,7 @@ const walletOptions = {
   autoConnect: true,
 };
 
+
 const toastOptions = {
   timeout: 5000,
   position: POSITION.BOTTOM_CENTER,

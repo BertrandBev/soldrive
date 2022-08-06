@@ -98,6 +98,7 @@ export function _createChainAPI() {
   //
   return {
     wallet,
+    provider,
     connection,
     api,
   };

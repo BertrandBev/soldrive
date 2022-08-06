@@ -32,7 +32,7 @@ function handler(clickData: MouseEvent) {
 }
 
 function onClick() {
-  console.log('file click');
+  console.log("file click");
 }
 </script>
 
@@ -40,7 +40,7 @@ function onClick() {
   <div>
     <!-- File -->
     <div
-      class="card card-bordered shadow-xl border-slate-500 w-[180px] h-[180px] items-center"
+      class="card card-bordered btn btn-ghost shadow-xl border-slate-500 w-[180px] h-[180px] items-center"
       @contextmenu.prevent="(ev) => handler(ev)"
       @click="onClick()"
     >

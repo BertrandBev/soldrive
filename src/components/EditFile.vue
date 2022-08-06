@@ -8,6 +8,7 @@ import * as anchor from "@project-serum/anchor";
 import { useToast } from "vue-toastification";
 import web3 = anchor.web3;
 import { useUserStore } from "../store/userStore";
+import { useFileStore } from "../store/fileStore";
 
 const { api, wallet, connection } = useChainApi();
 const toast = useToast();
@@ -68,9 +69,6 @@ watchEffect(() => {
   emptyName.value = data.value.name.length == 0;
   emptyContent.value = data.value.content.length == 0;
 });
-
-// Create
-const saveBtn = ref(null as any);
 
 const {
   execute: saveFile,
@@ -171,6 +169,12 @@ onMounted(async () => {
   rentPerByte.value =
     (await connection.getMinimumBalanceForRentExemption(1)) - rentBase.value;
 });
+
+// Upload file
+const { uploadFile } = useFileStore();
+function upload() {
+  uploadFile();
+}
 </script>
 
 <template>
@@ -223,14 +227,18 @@ onMounted(async () => {
         <label class="whitespace-nowrap"> {{ noteRentCostStr }}</label>
       </div>
       <!-- Save bar -->
-      <button
-        ref="saveBtn"
-        class="btn btn-ghost self-end mt-6"
-        :class="{ loading: fileSaving }"
-        @click="() => saveFile()"
-      >
-        Save
-      </button>
+      <div class="flex justify-end mt-6">
+        <!-- Save btn -->
+        <div class="btn btn-ghost" @click="() => upload()">Upload</div>
+        <!-- Save btn -->
+        <div
+          class="btn btn-ghost"
+          :class="{ loading: fileSaving }"
+          @click="() => saveFile()"
+        >
+          Save
+        </div>
+      </div>
       <!--  -->
     </div>
   </div>
