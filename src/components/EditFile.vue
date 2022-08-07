@@ -9,6 +9,7 @@ import { useToast } from "vue-toastification";
 import web3 = anchor.web3;
 import { useUserStore } from "../store/userStore";
 import { useFileStore } from "../store/fileStore";
+import Loader from "./utils/Loader.vue";
 
 const { api, wallet, connection } = useChainApi();
 const toast = useToast();
@@ -16,9 +17,13 @@ const { user, fetchUser, encrypt, decrypt } = useUserStore();
 const router = useRouter();
 
 const props = defineProps<{
-  id?: number;
-  folder: number;
+  id?: string;
+  folder: string;
 }>();
+
+const fileId = computed(() => {
+  return props.id ? parseInt(props.id) : undefined;
+});
 
 // File data
 const data = ref({
@@ -33,14 +38,14 @@ const data = ref({
 // Get file
 const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
   async () => {
-    if (!props.id) {
+    if (!fileId.value) {
       // New file
-      data.value.parent = props.folder;
+      data.value.parent = parseInt(props.folder) || 0;
     } else {
       // Existing file
-      const res = await api.value?.fetchFile(props.id, true);
+      const res = await api.value?.fetchFile(fileId.value, true);
       if (!res) {
-        toast.error(`Note ${props.id} not found`);
+        toast.error(`Note ${fileId.value} not found`);
       } else {
         // Populate fields
         data.value.loaded = true;
@@ -58,7 +63,7 @@ const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
 );
 
 const isNew = computed(() => {
-  return props.id == undefined;
+  return fileId == undefined;
 });
 
 //
@@ -114,7 +119,7 @@ const {
       }
       // Update file
       await api.value?.updateFile(
-        props.id!,
+        fileId.value,
         data.value.parent,
         data.value.name,
         data.value.access,

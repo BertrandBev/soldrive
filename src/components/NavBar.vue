@@ -39,6 +39,6 @@ function login() {}
     <div>
       <WalletMultiButton dark></WalletMultiButton>
     </div>
-    <AuthButton class="ml-2"></AuthButton>
+    <AuthButton></AuthButton>
   </div>
 </template>
