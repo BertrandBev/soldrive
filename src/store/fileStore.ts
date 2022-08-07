@@ -7,9 +7,25 @@ import {
 import { createGlobalState } from "@vueuse/core";
 import { watch } from "vue";
 import { Connection, Transaction } from "@solana/web3.js";
-import { useWallet } from "solana-wallets-vue";
-import { computed } from "vue";
+import BigNumber from "bignumber.js";
 const FORCE_ANCHOR_WALLET = true;
+
+export function spaceString(
+  val: number,
+  precision = 0,
+  prefixes = ["B", "KB", "MB", "GB", "TB"]
+) {
+  let idx = 0;
+  while (val > 1e3 && idx < prefixes.length) {
+    val /= 1e3;
+    idx += 1;
+  }
+  let rtn = `${val.toFixed(precision)}`;
+  if (idx < prefixes.length) {
+    rtn += ` ${prefixes[idx]}`;
+  }
+  return rtn;
+}
 
 function createFileStore() {
   let { wallet, connection, provider } = useChainApi();
@@ -46,6 +62,37 @@ function createFileStore() {
     { immediate: true }
   );
 
+  async function awaitBundlr() {
+    if (!readyPromise || !bundlr) {
+      throw new Error("Wallet not ready");
+    }
+    await readyPromise;
+  }
+
+  async function getBalance() {
+    await awaitBundlr();
+    return await bundlr!.getLoadedBalance();
+  }
+
+  async function getCost(bytes: number) {
+    await awaitBundlr();
+    return await bundlr!.getPrice(bytes);
+  }
+
+  async function deposit(amount: BigNumber) {
+    await awaitBundlr();
+    if (!bundlr) return;
+    const fundStatus = await bundlr.fund(amount);
+    return fundStatus;
+  }
+
+  async function withdrawBalance() {
+    await awaitBundlr();
+    if (!bundlr) return;
+    const balance = await getBalance();
+    await bundlr.withdrawBalance(balance!);
+  }
+
   async function uploadFile() {
     //
     if (!readyPromise || !bundlr) {
@@ -55,27 +102,29 @@ function createFileStore() {
     const data = Buffer.from("A cool file!");
 
     // Get balance
-    const balance = await bundlr.getLoadedBalance();
-    const cost = await bundlr.getPrice(data.length);
+    const balance = await getBalance();
+    const cost = await getCost(data.length);
     console.log("balance:", balance.toNumber(), "cost:", cost.toNumber());
 
-    // Fund
-    if (balance.toNumber() < cost.toNumber()) {
-      console.log("Funds required");
-      const fundStatus = await bundlr.fund(cost.toNumber());
-      console.log("Funded:", fundStatus);
+    if (balance.isLessThan(cost)) {
+      throw new Error("Insufficient funds");
     }
 
     // Upload file
-    const tags = [{ name: "Content-Type", value: "text/plain" }];
-    const tx = bundlr!.createTransaction(data, { tags });
-    //
+    // application/octet-stream
+    const tags = [{ name: "Content-Type", value: "application/octet-stream" }];
+    const tx = bundlr.createTransaction(data, { tags });
+    // Sign and send transaction
     await tx.sign();
     const result = await tx.upload();
     console.log("result:", result);
   }
 
   return {
+    getBalance,
+    getCost,
+    deposit,
+    withdrawBalance,
     uploadFile,
   };
 }

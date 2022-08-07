@@ -1,6 +1,7 @@
 import * as VueRouter from "vue-router";
 import Home from "./components/Home.vue";
 import EditFile from "./components/EditFile.vue";
+import Account from "./components/Account.vue";
 
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
@@ -22,6 +23,11 @@ const router = VueRouter.createRouter({
       component: EditFile,
       props: (route) => route.query,
       meta: { name: "File" },
+    },
+    {
+      path: "/account",
+      component: Account,
+      meta: { name: "Account" },
     },
   ],
 });

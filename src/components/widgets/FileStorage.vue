@@ -1,0 +1,103 @@
+<script setup lang="ts">
+import { useFileStore, spaceString } from "../../store/fileStore";
+import { useAsyncState } from "@vueuse/core";
+import { useToast } from "vue-toastification";
+import { ref, onMounted } from "vue";
+import BigNumber from "bignumber.js";
+import DepositModal from "./DepositModal.vue";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+
+const modalOpen = ref(false);
+const depositModal = ref<null | InstanceType<typeof DepositModal>>(null);
+
+const { deposit, getBalance, getCost, uploadFile, withdrawBalance } =
+  useFileStore();
+const toast = useToast();
+
+const { execute: withdraw, isLoading: withdrawLoading } = useAsyncState(
+  async () => {
+    await withdrawBalance();
+  },
+  null,
+  {
+    immediate: false,
+    onError: (e) => {
+      console.error(e);
+      toast.error((e as Error).message);
+    },
+  }
+);
+
+//
+function openDeposit() {
+  depositModal.value!.open();
+}
+
+// Retrieve balance
+const balance = ref<BigNumber | null>(null);
+const mbCost = ref<BigNumber | null>(null);
+const storageBalanceStr = ref("");
+const cryptoBalanceStr = ref("");
+onMounted(async () => {
+  // Loading state
+  storageBalanceStr.value = "...";
+  cryptoBalanceStr.value = "";
+  // Retrieve balances
+  try {
+    balance.value = await getBalance();
+    mbCost.value = await getCost(1e6);
+    if (!mbCost.value) throw new Error("Invalid cost");
+  } catch (e) {
+    console.error(e);
+    storageBalanceStr.value = "Error";
+    return;
+  }
+  // Finish loading
+  const mbAllowed = balance.value.dividedBy(mbCost.value).multipliedBy(1e6);
+  storageBalanceStr.value = spaceString(mbAllowed.toNumber(), 1);
+  cryptoBalanceStr.value =
+    balance.value.dividedBy(LAMPORTS_PER_SOL).toFixed(3) + " SOL";
+});
+</script>
+
+<template>
+  <div>
+    <!-- Stats -->
+    <div class="stats bg-primary text-primary-content">
+      <div class="stat">
+        <div class="stat-title">File storage balance</div>
+        <div class="stat-value">
+          <div>{{ storageBalanceStr }}</div>
+          <div class="text-xl text-gray-300">{{ cryptoBalanceStr }}</div>
+        </div>
+        <div class="stat-actions">
+          <button class="btn btn-sm" @click="openDeposit">Deposit</button>
+          <button class="btn btn-sm ml-2" @click="modalOpen = true">
+            Withdraw
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Deposit modal -->
+    <DepositModal ref="depositModal"></DepositModal>
+    <!-- Withdraw modal -->
+    <div class="modal" :class="{ 'modal-open': modalOpen }">
+      <div class="modal-box">
+        <h3 class="font-bold text-lg">Withdraw file storage funds</h3>
+        <p class="py-2">
+          Do you want to withdraw your funds allocated to file storage?
+        </p>
+        <div class="modal-action">
+          <div class="btn" @click="modalOpen = false">Cancel</div>
+          <div
+            class="btn"
+            :class="{ loading: withdrawLoading }"
+            @click="() => withdraw()"
+          >
+            Yes
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

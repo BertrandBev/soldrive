@@ -31,6 +31,7 @@ function login() {}
     >
       <ChevronLeftIcon class="w-5 h-5" />
     </button>
+    <img v-else src="../assets/logo.png" width="48" height="48" />
     <!-- Name -->
     <div class="normal-case text-xl font-bold px-4">
       {{ route.meta.name }}

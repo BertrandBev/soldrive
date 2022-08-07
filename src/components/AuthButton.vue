@@ -9,8 +9,10 @@ import { useRoute } from "vue-router";
 import { useUserStore, AuthState } from "../store/userStore";
 import { ref, computed, watchEffect } from "vue";
 import { useToast } from "vue-toastification";
+import { useRouter } from "vue-router";
 
 const toast = useToast();
+const router = useRouter();
 const { user, noUser, createUser, fetchUser, fetchEncryptionKey, authState } =
   useUserStore();
 
@@ -49,7 +51,7 @@ function auth() {
       encryptionModal.value = true;
       break;
     case AuthState.LOGGED_IN:
-      // TODO: Nav to auth page
+      router.push({ path: "/account" });
       break;
   }
 }
