@@ -2,21 +2,38 @@
 import { useFileStore, spaceString } from "../../store/fileStore";
 import { useAsyncState } from "@vueuse/core";
 import { useToast } from "vue-toastification";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import BigNumber from "bignumber.js";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { useAnchorWallet } from "../../api/chain-api";
 
 const modalOpen = ref(false);
 
-const { deposit, getBalance, getCost, uploadFile, withdrawBalance } =
+const { deposit, getBalance, getCost, uploadFile, withdrawBalance, mbCost } =
   useFileStore();
 const toast = useToast();
 
-const amount = ref(0);
+const amountMb = ref(0);
+const amountError = computed(() => {
+  if (isNaN(amountMb.value) || amountMb.value <= 0) return "Invalid amount";
+  if (amountMb.value > 1e9) return "Must be < 1TB";
+});
+const amountLamports = computed(() => {
+  return Math.ceil(amountMb.value * mbCost.value.toNumber());
+});
+const cryptoCostStr = computed(() => {
+  return `${(amountLamports.value / LAMPORTS_PER_SOL).toFixed(4)} SOL`;
+});
 
 const { execute: depositFunds, isLoading: depositLoading } = useAsyncState(
   async () => {
-    // await deposit(BigNumber(2));
+    if (amountError.value) {
+      toast.error(amountError.value);
+      return;
+    }
+    await deposit(new BigNumber(amountLamports.value));
+    toast.success("Deposit successful!");
+    modalOpen.value = false;
   },
   null,
   {
@@ -27,32 +44,6 @@ const { execute: depositFunds, isLoading: depositLoading } = useAsyncState(
     },
   }
 );
-
-// Retrieve balance
-// const balance = ref<BigNumber | null>(null);
-const mbCost = ref<BigNumber | null>(null);
-const storageBalanceStr = ref("");
-const cryptoBalanceStr = ref("");
-onMounted(async () => {
-  // Loading state
-  storageBalanceStr.value = "...";
-  cryptoBalanceStr.value = "";
-  // Retrieve balances
-  try {
-    // balance.value = await getBalance();
-    mbCost.value = await getCost(1e6);
-    if (!mbCost.value) throw new Error("Invalid cost");
-  } catch (e) {
-    console.error(e);
-    storageBalanceStr.value = "Error";
-    return;
-  }
-  // Finish loading
-  const mbAllowed = balance.value.dividedBy(mbCost.value).multipliedBy(1e6);
-  storageBalanceStr.value = spaceString(mbAllowed.toNumber(), 1);
-  cryptoBalanceStr.value =
-    balance.value.dividedBy(LAMPORTS_PER_SOL).toFixed(3) + " SOL";
-});
 
 function open() {
   modalOpen.value = true;
@@ -73,15 +64,22 @@ defineExpose({ open });
       </p>
       <div class="flex items-center">
         <input
-          v-model="amount"
+          v-model="amountMb"
           type="number"
-          placeholder="Funding amount"
+          placeholder="File space"
           class="mt-2 input input-bordered input-info w-full max-w-[200px]"
+          :class="{ 'input-error': amountError }"
         />
         <div class="ml-2 font-bold mt-2">MB</div>
       </div>
       <!--  -->
-      <div class="mt-3 badge badge-lg badge-success">Cost 0.380 SOL</div>
+      <div v-if="amountError" class="text-red-400 mt-3">
+        {{ amountError }}
+      </div>
+      <div v-else class="mt-3 badge badge-lg badge-success">
+        Cost: {{ cryptoCostStr }}
+      </div>
+
       <!--  -->
       <div class="modal-action">
         <div class="btn" @click="modalOpen = false">Cancel</div>

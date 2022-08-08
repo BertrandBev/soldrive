@@ -10,6 +10,8 @@ import web3 = anchor.web3;
 import { useUserStore } from "../store/userStore";
 import { useFileStore } from "../store/fileStore";
 import Loader from "./utils/Loader.vue";
+import Dropzone from "./widgets/Dropzone.vue";
+import { LockClosedIcon, LockOpenIcon } from "@heroicons/vue/solid";
 
 const { api, wallet, connection } = useChainApi();
 const toast = useToast();
@@ -25,12 +27,17 @@ const fileId = computed(() => {
   return props.id ? parseInt(props.id) : undefined;
 });
 
+const isNew = computed(() => {
+  return fileId.value == undefined;
+});
+
 // File data
 const data = ref({
   loaded: false,
   name: "",
   parent: 0,
   access: "private" as Access,
+  type: "note" as FileType,
   content: "",
   contentBuffer: Buffer.from("", "base64"),
 });
@@ -38,12 +45,12 @@ const data = ref({
 // Get file
 const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
   async () => {
-    if (!fileId.value) {
+    if (isNew.value) {
       // New file
       data.value.parent = parseInt(props.folder) || 0;
     } else {
       // Existing file
-      const res = await api.value?.fetchFile(fileId.value, true);
+      const res = await api.value?.fetchFile(fileId.value!, true);
       if (!res) {
         toast.error(`Note ${fileId.value} not found`);
       } else {
@@ -61,10 +68,6 @@ const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
   },
   null
 );
-
-const isNew = computed(() => {
-  return fileId == undefined;
-});
 
 //
 const emptyName = ref(false);
@@ -119,7 +122,7 @@ const {
       }
       // Update file
       await api.value?.updateFile(
-        fileId.value,
+        fileId.value!,
         data.value.parent,
         data.value.name,
         data.value.access,
@@ -185,13 +188,11 @@ function upload() {
 <template>
   <div class="w-full flex flex-col items-center p-5">
     <!-- Loader -->
-    <Loader
-      v-if="fileLoading || fileLoadingError"
-      :error="fileLoadingError ? 'File loading error' : undefined"
-    ></Loader>
+    <Loader v-if="fileLoading"></Loader>
+    <div v-else-if="fileLoadingError">File loading error</div>
     <!-- Card -->
     <div v-else class="card w-full border border-info flex-col p-6">
-      <div class="flex">
+      <div class="flex items-center">
         <!-- Name -->
         <div class="flex flex-col w-full">
           <input
@@ -206,13 +207,42 @@ function upload() {
           />
         </div>
         <!-- Encryption -->
-        <select v-model="data.access" class="select ml-2">
+      </div>
+      <!-- Encryption -->
+      <div class="mt-2 flex items-center">
+        <span class="opacity-50">Encryption</span>
+        <select v-model="data.access" class="select ml-1">
           <option disabled :value="null" selected>Access</option>
           <option value="private">Private (encrypted)</option>
           <option value="publicRead">Public read only</option>
           <option value="publicReadWrite">Public read write</option>
         </select>
+        <div class="ml-2">
+          <LockClosedIcon
+            class="w-[18px] h-[18px]"
+            v-if="data.access == 'private'"
+          ></LockClosedIcon>
+          <LockOpenIcon class="w-[18px] h-[18px]" v-else></LockOpenIcon>
+        </div>
       </div>
+      <!-- Backend -->
+      <div class="mt-2 flex items-center">
+        <span class="opacity-50">Backend</span>
+        <div class="tabs tabs-boxed ml-3">
+          <a class="tab tab-active">On-chain</a>
+          <a class="tab">Arweave</a>
+        </div>
+      </div>
+      <!-- File type -->
+      <div class="mt-4 flex items-center">
+        <span class="opacity-50">File type</span>
+        <div class="tabs tabs-boxed ml-3">
+          <a class="tab">Note</a>
+          <a class="tab">File</a>
+        </div>
+      </div>
+      <!-- File dropzone -->
+      <Dropzone class="mt-2"></Dropzone>
       <!-- <label class="label mt-4"> Website </label> -->
       <textarea
         v-model="data.content"

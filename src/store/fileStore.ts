@@ -5,7 +5,7 @@ import {
   useAnchorProvider,
 } from "../api/chain-api";
 import { createGlobalState } from "@vueuse/core";
-import { watch } from "vue";
+import { watch, ref } from "vue";
 import { Connection, Transaction } from "@solana/web3.js";
 import BigNumber from "bignumber.js";
 const FORCE_ANCHOR_WALLET = true;
@@ -41,10 +41,11 @@ function createFileStore() {
 
   let bundlr: WebBundlr | null = null;
   let readyPromise: Promise<void> | null = null;
+  const mbCost = ref(new BigNumber(0));
 
   watch(
     [wallet],
-    () => {
+    async () => {
       if (wallet.value) {
         const pvd = {
           publicKey: wallet.value.publicKey,
@@ -57,6 +58,9 @@ function createFileStore() {
         };
         bundlr = new WebBundlr("https://node1.bundlr.network", "solana", pvd);
         readyPromise = bundlr.ready();
+        // Load balance
+        await readyPromise;
+        mbCost.value = await getCost(1e6);
       }
     },
     { immediate: true }
@@ -126,6 +130,7 @@ function createFileStore() {
     deposit,
     withdrawBalance,
     uploadFile,
+    mbCost,
   };
 }
 
