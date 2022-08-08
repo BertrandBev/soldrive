@@ -89,6 +89,7 @@ pub mod soldrive {
         name: String,
         file_type: FileType,
         access: Access,
+        backend: Backend,
         content: Vec<u8>,
     ) -> Result<()> {
         // Check args
@@ -111,6 +112,7 @@ pub mod soldrive {
         file.name = name;
         file.file_type = file_type;
         file.access = access;
+        file.backend = backend;
 
         // Copy content over
         let mut info = file.to_account_info();
@@ -125,6 +127,7 @@ pub mod soldrive {
         parent: Option<u32>,
         name: Option<String>,
         access: Option<Access>,
+        backend: Option<Backend>,
         content: Option<Vec<u8>>,
     ) -> Result<()> {
         // Check args
@@ -139,6 +142,9 @@ pub mod soldrive {
         }
         if let Some(access) = access {
             file.access = access;
+        }
+        if let Some(backend) = backend {
+            file.backend = backend;
         }
         if let Some(content) = content {
             file.size = content.len() as u32;
@@ -325,6 +331,12 @@ pub enum FileType {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Debug)]
+pub enum Backend {
+    Solana,
+    Arweave,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Debug)]
 pub enum Access {
     Private,
     PublicRead,
@@ -340,6 +352,7 @@ pub struct File {
     pub name: String,
     pub file_type: FileType,
     pub access: Access,
+    pub backend: Backend,
     pub size: u32,
     // pub content: String, omitted for deserialization purposes
 }
@@ -361,6 +374,7 @@ impl File {
         + 4 + File::NAME_MAX_LEN          // name
         + std::mem::size_of::<FileType>() // file_type
         + std::mem::size_of::<Access>()   // access
+        + std::mem::size_of::<Backend>()  // backend
         + 4                               // size
         + File::PADDING                   // padding
         + byte_count as usize // content

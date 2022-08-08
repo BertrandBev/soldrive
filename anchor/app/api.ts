@@ -26,10 +26,15 @@ const typeProg = null as Program<Soldrive>;
 export type User = Awaited<ReturnType<typeof typeProg.account.user.fetch>>;
 export type Folder = Awaited<ReturnType<typeof typeProg.account.folder.fetch>>;
 type FileRaw = Awaited<ReturnType<typeof typeProg.account.file.fetch>>;
-export type File = FileRaw & { content: Buffer; access: Access };
+export type File = FileRaw & {
+  content: Buffer;
+  access: Access;
+  backend: Backend;
+};
 
 export type Access = "private" | "publicRead" | "publicReadWrite";
 export type FileType = "file" | "note";
+export type Backend = "solana" | "arweave";
 
 export function getAPI(
   authority: web3.PublicKey,
@@ -94,6 +99,13 @@ export function getAPI(
     }
   }
 
+  function parseEnum<T extends string>(obj: { [key: string]: any }): T {
+    const keys = Object.keys(obj);
+    if (keys.length != 1) throw new Error("Invalid key set");
+    const key = keys[0];
+    return (key[0].toLowerCase() + key.slice(1)) as T;
+  }
+
   function decodeFileAccount(
     accountInfo: web3.AccountInfo<Buffer>,
     withContent = false
@@ -103,11 +115,24 @@ export function getAPI(
       accountInfo.data
     ) as File;
     // Update access
-    const access = decoded.access;
-    Object.keys(access).forEach((key) => {
-      const camelCase = key[0].toLowerCase() + key.slice(1);
-      decoded.access = camelCase as Access;
-    });
+    // const access = decoded.access;
+    // Object.keys(access).forEach((key) => {
+    //   const camelCase = key[0].toLowerCase() + key.slice(1);
+    //   decoded.access = camelCase as Access;
+    // });
+    // const fileType = decoded.fileType;
+    // Object.keys(fileType).forEach((key) => {
+    //   const camelCase = key[0].toLowerCase() + key.slice(1);
+    //   decoded.fileType = camelCase as FileType;
+    // });
+    // const backend = decoded.backend;
+    // Object.keys(backend).forEach((key) => {
+    //   const camelCase = key[0].toLowerCase() + key.slice(1);
+    //   decoded.backend = camelCase as Backend;
+    // });
+    decoded.access = parseEnum<Access>(decoded.access);
+    decoded.fileType = parseEnum<FileType>(decoded.fileType);
+    decoded.backend = parseEnum<Backend>(decoded.backend);
 
     // Fetch content
     if (withContent) {
@@ -216,6 +241,7 @@ export function getAPI(
     name: string,
     fileType: FileType,
     access: Access,
+    backend: Backend,
     content: Buffer,
     signers: web3.Keypair[] = defaultSigners
   ) {
@@ -228,6 +254,7 @@ export function getAPI(
         name,
         { [fileType]: {} },
         { [access]: {} },
+        { [backend]: {} },
         content
       )
       .accounts({
@@ -264,13 +291,15 @@ export function getAPI(
     parent?: number,
     name?: string,
     access?: Access,
+    backend?: Backend,
     content?: Buffer,
     signers: web3.Keypair[] = defaultSigners
   ) {
     const filePda = await getFilePda(id);
     const accessEnum = access ? { [access]: {} } : null;
+    const backendEnum = backend ? { [backend]: {} } : null;
     return program.methods
-      .updateFile(id, parent, name, accessEnum, content)
+      .updateFile(id, parent, name, accessEnum, backendEnum, content)
       .accounts({
         file: filePda.publicKey,
         authority: authority,
@@ -288,7 +317,7 @@ export function getAPI(
       ids.map(async (id) => {
         const filePda = await getFilePda(id);
         return program.methods
-          .updateFile(id, parent, null, null, null)
+          .updateFile(id, parent, null, null, null, null)
           .accounts({
             file: filePda.publicKey,
             authority: authority,

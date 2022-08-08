@@ -104,14 +104,16 @@ describe("soldrive", () => {
       name,
       "file",
       "private",
+      "solana",
       Buffer.from(content)
     );
     const file = await fetchFile(id, true);
     assert.equal(file.id, id);
     assert.equal(file.parent, parent);
     assert.equal(file.name, name);
-    assert.ok(file.fileType["file"]);
-    assert.ok(file.access["private"]);
+    assert.equal(file.fileType, "file");
+    assert.equal(file.access, "private");
+    assert.equal(file.backend, "solana");
     assert.equal(file.content.toString(), content.toString());
     assert.equal(file.size, content.length);
 
@@ -126,15 +128,17 @@ describe("soldrive", () => {
     const parent = 2;
     const name = "my file 2";
     const content = Buffer.from("some content" + "some content"); // Up to 2x the size
-    await updateFile(id, parent, null, null, null);
-    await updateFile(id, null, name, null, null);
-    await updateFile(id, null, null, "publicRead", null);
-    await updateFile(id, null, null, null, Buffer.from(content));
+    await updateFile(id, parent, null, null, null, null);
+    await updateFile(id, null, name, null, null, null);
+    await updateFile(id, null, null, "publicRead", null, null);
+    await updateFile(id, null, null, null, "arweave", null);
+    await updateFile(id, null, null, null, null, Buffer.from(content));
 
     const file = await fetchFile(id, true);
     assert.equal(file.id, id);
     assert.equal(file.parent, parent);
-    assert.ok(file.access["publicRead"]);
+    assert.equal(file.access, "publicRead");
+    assert.equal(file.backend, "arweave");
     assert.equal(file.content.toString(), content.toString());
     assert.equal(file.size, content.length);
   });
@@ -153,6 +157,7 @@ describe("soldrive", () => {
       name,
       "file",
       "private",
+      "solana",
       Buffer.from(content)
     );
 

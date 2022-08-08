@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watchEffect, computed, onMounted } from "vue";
 import { PencilIcon, CheckIcon } from "@heroicons/vue/outline";
-import { useChainApi, FileType, Access } from "../api/chain-api";
+import { useChainApi, FileType, Access, Backend } from "../api/chain-api";
 import { useAsyncState, useThrottleFn } from "@vueuse/core";
 import { useRouter } from "vue-router";
 import * as anchor from "@project-serum/anchor";
@@ -36,8 +36,10 @@ const data = ref({
   loaded: false,
   name: "",
   parent: 0,
+  // Default
   access: "private" as Access,
   type: "note" as FileType,
+  backend: "solana" as Backend,
   content: "",
   contentBuffer: Buffer.from("", "base64"),
 });
@@ -107,8 +109,9 @@ const {
         data.value.contentBuffer.length,
         data.value.parent,
         data.value.name,
-        "note",
+        data.value.type,
         data.value.access,
+        data.value.backend,
         data.value.contentBuffer
       );
       // Bump id
@@ -126,6 +129,7 @@ const {
         data.value.parent,
         data.value.name,
         data.value.access,
+        data.value.backend,
         data.value.contentBuffer
       );
       toast.success("File successfully updated!");
@@ -183,6 +187,11 @@ const { uploadFile } = useFileStore();
 function upload() {
   uploadFile();
 }
+
+function navBack() {
+  // Warning dialog
+  router.go(-1);
+}
 </script>
 
 <template>
@@ -229,22 +238,33 @@ function upload() {
       <div class="mt-2 flex items-center">
         <span class="opacity-50">Backend</span>
         <div class="tabs tabs-boxed ml-3">
-          <a class="tab tab-active">On-chain</a>
-          <a class="tab">Arweave</a>
+          <a
+            v-for="backend in (['solana', 'arweave'] as Backend[])"
+            class="tab"
+            :class="{ 'tab-active': data.backend == backend }"
+            @click="data.backend = backend"
+            >{{ backend }}</a
+          >
         </div>
       </div>
       <!-- File type -->
       <div class="mt-4 flex items-center">
         <span class="opacity-50">File type</span>
         <div class="tabs tabs-boxed ml-3">
-          <a class="tab">Note</a>
-          <a class="tab">File</a>
+          <a
+            v-for="fileType in (['note', 'file'] as FileType[])"
+            class="tab"
+            :class="{ 'tab-active': data.type == fileType }"
+            @click="data.type = fileType"
+            >{{ fileType }}</a
+          >
         </div>
       </div>
       <!-- File dropzone -->
-      <Dropzone class="mt-2"></Dropzone>
+      <Dropzone v-if="data.type == 'file'" class="mt-2"></Dropzone>
       <!-- <label class="label mt-4"> Website </label> -->
       <textarea
+        v-if="data.type == 'note'"
         v-model="data.content"
         class="textarea mt-4 min-h-[10rem]"
         :class="{
@@ -264,7 +284,7 @@ function upload() {
       <!-- Save bar -->
       <div class="flex justify-end mt-6">
         <!-- Save btn -->
-        <div class="btn btn-ghost" @click="() => upload()">Upload</div>
+        <div class="btn btn-ghost" @click="navBack">Cancel</div>
         <!-- Save btn -->
         <div
           class="btn btn-ghost"
