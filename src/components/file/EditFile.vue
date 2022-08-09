@@ -1,22 +1,23 @@
 <script setup lang="ts">
-import { ref, watchEffect, computed, onMounted } from "vue";
-import { PencilIcon, CheckIcon } from "@heroicons/vue/outline";
-import { useChainApi, FileType, Access, Backend } from "../api/chain-api";
+import { ref, watch, watchEffect, computed, onMounted } from "vue";
+import { useChainApi, FileType, Access, Backend } from "../../api/chain-api";
 import { useAsyncState, useThrottleFn } from "@vueuse/core";
 import { useRouter } from "vue-router";
 import * as anchor from "@project-serum/anchor";
 import { useToast } from "vue-toastification";
 import web3 = anchor.web3;
-import { useUserStore } from "../store/userStore";
-import { useFileStore } from "../store/fileStore";
-import Loader from "./utils/Loader.vue";
-import Dropzone from "./widgets/Dropzone.vue";
-import { LockClosedIcon, LockOpenIcon } from "@heroicons/vue/solid";
+import { useUserStore } from "../../store/userStore";
+import { useFileStore } from "../../store/fileStore";
+import Loader from "../utils/Loader.vue";
+import Dropzone from "../widgets/Dropzone.vue";
+import BackendSelect from "./BackendSelect.vue";
+import AccessSelect from "./AccessSelect.vue";
 
 const { api, wallet, connection } = useChainApi();
 const toast = useToast();
 const { user, fetchUser, encrypt, decrypt } = useUserStore();
 const router = useRouter();
+const dropzone = ref<null | InstanceType<typeof Dropzone>>(null);
 
 const props = defineProps<{
   id?: string;
@@ -31,6 +32,9 @@ const isNew = computed(() => {
   return fileId.value == undefined;
 });
 
+// Content
+const note = ref("");
+
 // File data
 const data = ref({
   loaded: false,
@@ -40,8 +44,7 @@ const data = ref({
   access: "private" as Access,
   type: "note" as FileType,
   backend: "solana" as Backend,
-  content: "",
-  contentBuffer: Buffer.from("", "base64"),
+  content: Buffer.from("", "base64"),
 });
 
 // Get file
@@ -61,10 +64,11 @@ const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
         data.value.name = res.name;
         data.value.parent = res.parent;
         data.value.access = res.access;
-        data.value.content = decrypt(
+        data.value.content = res.content;
+        note.value = decrypt(
           res.content,
           data.value.access == "private"
-        );
+        ).toString();
       }
     }
   },
@@ -80,11 +84,7 @@ watchEffect(() => {
   emptyContent.value = data.value.content.length == 0;
 });
 
-const {
-  execute: saveFile,
-  isLoading: fileSaving,
-  error: fileSavingError,
-} = useAsyncState(
+const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
   async () => {
     // Fetch user
     if (!user.value) {
@@ -106,13 +106,13 @@ const {
       const id = user.value.fileId + 1;
       await api.value?.createFile(
         id,
-        data.value.contentBuffer.length,
+        data.value.content.length,
         data.value.parent,
         data.value.name,
         data.value.type,
         data.value.access,
         data.value.backend,
-        data.value.contentBuffer
+        data.value.content
       );
       // Bump id
       await fetchUser.execute();
@@ -130,7 +130,7 @@ const {
         data.value.name,
         data.value.access,
         data.value.backend,
-        data.value.contentBuffer
+        data.value.content
       );
       toast.success("File successfully updated!");
     }
@@ -150,7 +150,7 @@ const {
 const rentBase = ref(0);
 const rentPerByte = ref(0);
 const noteRentCost = computed(() => {
-  return rentBase.value + rentPerByte.value * data.value.content.length;
+  return rentBase.value + rentPerByte.value * note.value.length;
 });
 const noteRentCostStr = computed(() => {
   const solVal = noteRentCost.value / 1e9;
@@ -159,16 +159,17 @@ const noteRentCostStr = computed(() => {
   else return `${solVal.toFixed(3)} SOL`;
 });
 const wordCountStr = computed(() => {
-  return `${data.value.content.length} characters`;
+  return `${note.value.length} characters`;
 });
 
-watchEffect(() => {
-  const msg = data.value.content;
+watch([note], () => {
+  const msg = note.value;
   try {
-    const buf = encrypt(msg, data.value.access == "private");
+    const buf = encrypt(Buffer.from(msg), data.value.access == "private");
     const decrypted = decrypt(buf, data.value.access == "private");
-    if (decrypted != msg) throw new Error("Encryption error");
-    data.value.contentBuffer = buf;
+    if (decrypted.toString() != msg) throw new Error("Encryption error");
+    data.value.content = buf;
+    console.log('encrypted', buf)
   } catch (e) {
     console.error("Encryption error:", (e as Error).message);
     toast.error((e as Error).message);
@@ -217,36 +218,10 @@ function navBack() {
         </div>
         <!-- Encryption -->
       </div>
-      <!-- Encryption -->
-      <div class="mt-2 flex items-center">
-        <span class="opacity-50">Encryption</span>
-        <select v-model="data.access" class="select ml-1">
-          <option disabled :value="null" selected>Access</option>
-          <option value="private">Private (encrypted)</option>
-          <option value="publicRead">Public read only</option>
-          <option value="publicReadWrite">Public read write</option>
-        </select>
-        <div class="ml-2">
-          <LockClosedIcon
-            class="w-[18px] h-[18px]"
-            v-if="data.access == 'private'"
-          ></LockClosedIcon>
-          <LockOpenIcon class="w-[18px] h-[18px]" v-else></LockOpenIcon>
-        </div>
-      </div>
-      <!-- Backend -->
-      <div class="mt-2 flex items-center">
-        <span class="opacity-50">Backend</span>
-        <div class="tabs tabs-boxed ml-3">
-          <a
-            v-for="backend in (['solana', 'arweave'] as Backend[])"
-            class="tab"
-            :class="{ 'tab-active': data.backend == backend }"
-            @click="data.backend = backend"
-            >{{ backend }}</a
-          >
-        </div>
-      </div>
+      <!--  -->
+      <AccessSelect v-model="data.access"></AccessSelect>
+      <!--  -->
+      <BackendSelect v-model="data.backend"></BackendSelect>
       <!-- File type -->
       <div class="mt-4 flex items-center">
         <span class="opacity-50">File type</span>
@@ -261,11 +236,15 @@ function navBack() {
         </div>
       </div>
       <!-- File dropzone -->
-      <Dropzone v-if="data.type == 'file'" class="mt-2"></Dropzone>
+      <Dropzone
+        v-if="data.type == 'file'"
+        class="mt-2"
+        ref="dropzone"
+      ></Dropzone>
       <!-- <label class="label mt-4"> Website </label> -->
       <textarea
         v-if="data.type == 'note'"
-        v-model="data.content"
+        v-model="note"
         class="textarea mt-4 min-h-[10rem]"
         :class="{
           'textarea-info': !emptyContent,

@@ -66,23 +66,31 @@ function createUserStore() {
     { immediate: false }
   );
 
-  function encrypt(msg: string, encrypt: boolean) {
+  function encrypt(msg: Buffer, encrypt: boolean) {
+    msg = Buffer.from("abc");
     if (!encryptionKey) throw new Error("Encryption key not loaded");
+    const wordArray = CryptoJS.lib.WordArray.create(
+      Array.from(Uint32Array.from(msg))
+    );
+    console.log("u32", Uint32Array.from(msg));
+    console.log("word", wordArray);
+    console.log("encryption ready!");
     const b64 = CryptoJS.AES.encrypt(
-      msg,
+      wordArray,
       encrypt ? encryptionKey : ""
     ).toString();
-    const buf = Buffer.from(b64, "base64");
-    console.log(`b64 length: ${b64.length} buf ${buf.length}`);
-    return buf;
+    console.log("b64", b64);
+    return Buffer.from(b64, "base64");
   }
 
   function decrypt(buf: Buffer, encrypt: boolean) {
     if (!encryptionKey) throw new Error("Encryption key not loaded");
     const b64 = buf.toString("base64");
-    return CryptoJS.AES.decrypt(b64, encrypt ? encryptionKey : "").toString(
-      CryptoJS.enc.Utf8
-    );
+    console.log("b64", b64);
+    const wordArray = CryptoJS.AES.decrypt(b64, encrypt ? encryptionKey : "");
+    console.log("word", wordArray);
+    console.log("u32", Uint32Array.from(wordArray.words));
+    return Buffer.from(Uint32Array.from(wordArray.words));
   }
 
   // Automatically fetch user on wallet connection

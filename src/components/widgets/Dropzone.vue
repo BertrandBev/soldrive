@@ -3,6 +3,9 @@ import { useDropzone } from "vue3-dropzone";
 import { FileWithPath } from "file-selector";
 import { computed, watch, ref } from "vue";
 import { spaceString } from "../../store/fileStore";
+import { useUserStore } from "../../store/userStore";
+``;
+const { user, fetchUser, encrypt, decrypt } = useUserStore();
 
 const MAX_SIZE = 100e9;
 
@@ -61,17 +64,25 @@ const file = computed(() => {
 
 const progress = ref(0);
 const processingError = ref(false);
+const data = ref<ArrayBuffer | null>();
 
 function processFile() {
   if (!file.value) return;
+  data.value = null;
   const reader = new FileReader();
   progress.value = 0;
-  console.log("processing...");
   processingError.value = false;
   reader.onload = function (e: any) {
-    const data = e.target.result;
-    console.log("file loaded!", data);
+    const arrayBuffer = e.target.result as ArrayBuffer;
     progress.value = 0;
+    data.value = arrayBuffer;
+
+    //
+    console.log("encrypting...");
+    const a = Buffer.from(arrayBuffer);
+    console.log("encrypting...1");
+    encrypt(a, true);
+    console.log("encrypted!");
   };
   reader.onerror = function (e: any) {
     console.error("File loading error", e);
@@ -80,9 +91,7 @@ function processFile() {
   };
   reader.onprogress = function (ev) {
     progress.value = Math.ceil((ev.loaded / ev.total) * 100);
-    console.log("progress", progress.value);
   };
-  console.log("file", file.value);
   reader.readAsArrayBuffer(file.value as File);
 }
 
@@ -102,6 +111,8 @@ const errMsg = computed(() => {
       return "File error";
   }
 });
+
+defineExpose({ data });
 
 watch([file], () => processFile());
 </script>
@@ -123,11 +134,10 @@ watch([file], () => processFile());
         <p v-else>Drop a file here, or click to select a file</p>
         <progress
           v-if="progress"
-          class="progress progress-info w-56 mt-3"
+          class="progress progress-info w-56 mt-3 shrink-0"
           :value="progress"
-          max="100"
+          :max="100"
         ></progress>
-        {{ progress }}
       </div>
     </div>
   </div>
@@ -140,7 +150,7 @@ watch([file], () => processFile());
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 128px;
+  height: 160px;
   padding: 32px;
 }
 .drop-zone-active {

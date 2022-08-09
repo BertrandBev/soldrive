@@ -1,6 +1,6 @@
 import * as VueRouter from "vue-router";
 import Home from "./components/Home.vue";
-import EditFile from "./components/EditFile.vue";
+import EditFile from "./components/file/EditFile.vue";
 import Account from "./components/Account.vue";
 
 const router = VueRouter.createRouter({
