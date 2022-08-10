@@ -9,10 +9,10 @@ import web3 = anchor.web3;
 import { useUserStore } from "../../store/userStore";
 import { useFileStore } from "../../store/fileStore";
 import Loader from "../utils/Loader.vue";
+import Content from "./Content.vue";
 
 import BackendSelect from "./BackendSelect.vue";
 import AccessSelect from "./AccessSelect.vue";
-import Content from "./Content.vue";
 
 const { api, wallet, connection } = useChainApi();
 const toast = useToast();
@@ -23,6 +23,8 @@ const props = defineProps<{
   id?: string;
   folder: string;
 }>();
+
+const content = ref<null | InstanceType<typeof Content>>(null);
 
 const fileId = computed(() => {
   return props.id ? parseInt(props.id) : undefined;
@@ -77,11 +79,8 @@ const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
 
 //
 const emptyName = ref(false);
-const emptyContent = ref(false);
-
-watchEffect(() => {
+watch([data.value.name], () => {
   emptyName.value = data.value.name.length == 0;
-  emptyContent.value = data.value.content.length == 0;
 });
 
 const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
@@ -93,14 +92,16 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
       return;
     }
     // Verify info
-    if (emptyContent.value) {
-      toast.error("A valid content must be provided");
-      return;
-    }
     if (emptyName.value) {
       toast.error("A valid file name must be provided");
       return;
     }
+    // Check content
+    if (!content.value?.validate()) {
+      return;
+    }
+    // Upload content if needed
+
     if (isNew.value) {
       // Create file
       const id = user.value.fileId + 1;
@@ -186,7 +187,16 @@ function navBack() {
       <!--  -->
       <BackendSelect v-model="data.backend"></BackendSelect>
       <!--  -->
-      <Content></Content>
+      <Content
+        ref="content"
+        :backend="data.backend"
+        :content="data.content"
+        :file-type="data.type"
+        :is-new="isNew"
+        :encrypt="data.access == 'private'"
+        :set-content="(buf) => (data.content = buf)"
+        :set-file-type="(type) => (data.type = type)"
+      ></Content>
       <!-- <label class="label mt-4"> Website </label> -->
 
       <!-- Save bar -->

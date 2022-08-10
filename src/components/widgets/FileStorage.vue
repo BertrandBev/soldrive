@@ -32,7 +32,7 @@ const { execute: withdraw, isLoading: withdrawLoading } = useAsyncState(
 
 //
 function openDeposit() {
-  depositModal.value!.open();
+  depositModal.value!.open(0);
 }
 
 // Retrieve balance

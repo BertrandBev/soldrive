@@ -2,10 +2,15 @@
 import { useDropzone } from "vue3-dropzone";
 import { FileWithPath } from "file-selector";
 import { computed, watch, ref } from "vue";
-import { spaceString } from "../../store/fileStore";
+import { spaceString, useFileStore } from "../../store/fileStore";
 import { useUserStore } from "../../store/userStore";
-``;
+import DepositModal from "../widgets/DepositModal.vue";
+
 const { user, fetchUser, encrypt, decrypt } = useUserStore();
+const { mbCostArweave, mbCostSolana, getBalance, getCost, uploadFile } =
+  useFileStore();
+
+const depositModal = ref<null | InstanceType<typeof DepositModal>>(null);
 
 const MAX_SIZE = 100e9;
 
@@ -72,15 +77,13 @@ function processFile() {
   const reader = new FileReader();
   progress.value = 0;
   processingError.value = false;
-  reader.onload = function (e: any) {
+  reader.onload = async function (e: any) {
     const arrayBuffer = e.target.result as ArrayBuffer;
-    progress.value = 0;
     data.value = arrayBuffer;
-
-    //
     console.log("encrypting...");
-    encrypt(arrayBuffer, true);
+    data.value = await encrypt(arrayBuffer, true);
     console.log("encrypted!");
+    progress.value = 0;
   };
   reader.onerror = function (e: any) {
     console.error("File loading error", e);
@@ -110,7 +113,18 @@ const errMsg = computed(() => {
   }
 });
 
-defineExpose({ data });
+async function upload() {
+  if (!data.value) throw new Error("Empty file");
+  // Get balance
+  const balance = await getBalance();
+  const cost = await getCost(data.value.byteLength);
+  if (balance.comparedTo(cost) <= 0)
+    await depositModal.value?.open(data.value.byteLength);
+  // Upload file
+  await uploadFile(data.value);
+}
+
+defineExpose({ data, upload });
 
 watch([file], () => processFile());
 </script>
@@ -138,6 +152,8 @@ watch([file], () => processFile());
         ></progress>
       </div>
     </div>
+    <!-- Deposit modal -->
+    <DepositModal ref="depositModal"></DepositModal>
   </div>
 </template>
 

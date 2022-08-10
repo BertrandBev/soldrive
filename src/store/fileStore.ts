@@ -101,27 +101,18 @@ function createFileStore() {
     await bundlr.withdrawBalance(balance!);
   }
 
-  async function uploadFile() {
-    //
-    if (!readyPromise || !bundlr) {
-      throw new Error("Wallet not ready");
-    }
-    await readyPromise;
-    const data = Buffer.from("A cool file!");
-
+  async function uploadFile(data: ArrayBuffer) {
+    await awaitBundlr();
+    if (!bundlr) return;
     // Get balance
     const balance = await getBalance();
-    const cost = await getCost(data.length);
-    console.log("balance:", balance.toNumber(), "cost:", cost.toNumber());
-
-    if (balance.isLessThan(cost)) {
-      throw new Error("Insufficient funds");
-    }
+    const cost = await getCost(data.byteLength);
+    if (balance.isLessThan(cost)) throw new Error("Insufficient funds");
 
     // Upload file
     // application/octet-stream
     const tags = [{ name: "Content-Type", value: "application/octet-stream" }];
-    const tx = bundlr.createTransaction(data, { tags });
+    const tx = bundlr.createTransaction(new Uint8Array(data), { tags });
     // Sign and send transaction
     await tx.sign();
     const result = await tx.upload();

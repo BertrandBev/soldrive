@@ -53,8 +53,8 @@ watch([access], () => {
     <div class="modal" :class="{ 'modal-open': infoModalOpen }">
       <div class="modal-box">
         <p class="py-2">
-          Note content can be encrypted. File are stored unencrypted, but their
-          links will be
+          Private note and files will be encrypted using a key derived from your
+          wallet keys. To share notes & files, leave them unencrypted
         </p>
         <div class="modal-action">
           <div class="btn" @click="infoModalOpen = false">Close</div>

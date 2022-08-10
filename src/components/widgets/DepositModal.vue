@@ -7,23 +7,34 @@ import BigNumber from "bignumber.js";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useAnchorWallet } from "../../api/chain-api";
 
-const modalOpen = ref(false);
-
-const { deposit, getBalance, getCost, uploadFile, withdrawBalance, mbCost } =
-  useFileStore();
+const {
+  deposit,
+  getBalance,
+  getCost,
+  uploadFile,
+  withdrawBalance,
+  mbCostArweave,
+} = useFileStore();
 const toast = useToast();
 
+const modalOpen = ref(false);
+const minSizeMb = ref(0);
 const amountMb = ref(0);
 const amountError = computed(() => {
   if (isNaN(amountMb.value) || amountMb.value <= 0) return "Invalid amount";
   if (amountMb.value > 1e9) return "Must be < 1TB";
+  if (minSizeMb.value > 0 && amountMb.value < minSizeMb.value)
+    return `Must be > ${minSizeMb.value}MB`;
 });
 const amountLamports = computed(() => {
-  return Math.ceil(amountMb.value * mbCost.value.toNumber());
+  return Math.ceil(amountMb.value * mbCostArweave.value.toNumber());
 });
 const cryptoCostStr = computed(() => {
   return `${(amountLamports.value / LAMPORTS_PER_SOL).toFixed(4)} SOL`;
 });
+
+// Callback
+const callback = { resolve: () => {}, reject: (reason: any) => {} };
 
 const { execute: depositFunds, isLoading: depositLoading } = useAsyncState(
   async () => {
@@ -34,6 +45,7 @@ const { execute: depositFunds, isLoading: depositLoading } = useAsyncState(
     await deposit(new BigNumber(amountLamports.value));
     toast.success("Deposit successful!");
     modalOpen.value = false;
+    callback.resolve();
   },
   null,
   {
@@ -45,8 +57,18 @@ const { execute: depositFunds, isLoading: depositLoading } = useAsyncState(
   }
 );
 
-function open() {
+async function open(minSizeInMb: number) {
+  minSizeMb.value = minSizeInMb;
   modalOpen.value = true;
+  return new Promise<void>((resolve, reject) => {
+    callback.resolve = resolve;
+    callback.reject = reject;
+  });
+}
+
+function close() {
+  modalOpen.value = false;
+  callback.reject("Closed");
 }
 
 defineExpose({ open });
@@ -82,7 +104,7 @@ defineExpose({ open });
 
       <!--  -->
       <div class="modal-action">
-        <div class="btn" @click="modalOpen = false">Cancel</div>
+        <div class="btn" @click="close">Cancel</div>
         <div
           class="btn"
           :class="{ loading: depositLoading }"
