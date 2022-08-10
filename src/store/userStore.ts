@@ -1,13 +1,9 @@
 import { createGlobalState, useAsyncState } from "@vueuse/core";
 import { ref, watchEffect, computed } from "vue";
 import { useChainApi } from "../api/chain-api";
-import axios from "axios";
-import CryptoJS from "crypto-js";
 import bs58 from "bs58";
 
 const ENCRYPTION_KEY = "encryptionKey";
-
-function createEncryptionTransaction() {}
 
 export enum AuthState {
   NO_USER,
@@ -21,7 +17,6 @@ function createUserStore() {
 
   //
   let firstLoad = false;
-  let encryptionKey: string | null = sessionStorage.getItem(ENCRYPTION_KEY);
   const noUser = ref(false);
 
   // Create user
@@ -38,17 +33,19 @@ function createUserStore() {
   const fetchEncryptionKey = useAsyncState(
     async () => {
       if (!wallet.value || !api.value) return;
+      let encryptionKey = sessionStorage.getItem(ENCRYPTION_KEY);
       if (!encryptionKey) {
         const tx = await api.value.getSignTransaction();
         const signed = await wallet.value.signTransaction(tx);
-        encryptionKey = bs58.encode(
-          new Uint8Array(signed.signatures[0].signature!)
-        );
+        const keyBuf = new Uint8Array(signed.signatures[0].signature!);
+        encryptionKey = bs58.encode(keyBuf);
         // Persist encryption key until the session ends
         sessionStorage.setItem(ENCRYPTION_KEY, encryptionKey);
       }
-      console.log("Encryption key:", encryptionKey);
-      return encryptionKey;
+      const keyBuf = bs58.decode(encryptionKey);
+      const derived = await deriveKey(keyBuf);
+      const empty = await deriveKey(Buffer.from(""));
+      return { key: derived, empty };
     },
     null,
     { immediate: false }
@@ -59,38 +56,70 @@ function createUserStore() {
     async () => {
       if (!wallet.value || !api.value) return;
       const user = await api.value.fetchUser();
-      if (encryptionKey) await fetchEncryptionKey.execute();
+      await fetchEncryptionKey.execute();
+      // TEST ENCRYPTION
+      const enc = new TextEncoder();
+      const dec = new TextDecoder();
+
+      const buf = enc.encode("test");
+      const encrypted = await encrypt(buf.buffer, true);
+      console.log("encrypted", buf, encrypted);
+      const decrypted = await decrypt(encrypted, true);
+      console.log("decrypted", decrypted, dec.decode(decrypted));
+
+      //
       return user;
     },
     null,
     { immediate: false }
   );
 
-  function encrypt(msg: Buffer, encrypt: boolean) {
-    msg = Buffer.from("abc");
-    if (!encryptionKey) throw new Error("Encryption key not loaded");
-    const wordArray = CryptoJS.lib.WordArray.create(
-      Array.from(Uint32Array.from(msg))
+  async function deriveKey(key: BufferSource) {
+    const subtle = window.crypto.subtle;
+    const salt = Buffer.from("");
+    const keyMaterial = await subtle.importKey("raw", key, "PBKDF2", false, [
+      "deriveBits",
+      "deriveKey",
+    ]);
+    return await subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt,
+        iterations: 1e5,
+        hash: "SHA-256",
+      },
+      keyMaterial,
+      { name: "AES-GCM", length: 256 },
+      true,
+      ["encrypt", "decrypt"]
     );
-    console.log("u32", Uint32Array.from(msg));
-    console.log("word", wordArray);
-    console.log("encryption ready!");
-    const b64 = CryptoJS.AES.encrypt(
-      wordArray,
-      encrypt ? encryptionKey : ""
-    ).toString();
-    console.log("b64", b64);
-    return Buffer.from(b64, "base64");
   }
 
-  function decrypt(buf: Buffer, encrypt: boolean) {
-    if (!encryptionKey) throw new Error("Encryption key not loaded");
-    const b64 = buf.toString("base64");
-    console.log("b64", b64);
-    const wordArray = CryptoJS.AES.decrypt(b64, encrypt ? encryptionKey : "");
-    console.log("word", wordArray);
-    console.log("u32", Uint32Array.from(wordArray.words));
-    return Buffer.from(Uint32Array.from(wordArray.words));
+  async function encrypt(msg: ArrayBufferLike, encrypt: boolean) {
+    const key = fetchEncryptionKey.state.value;
+    if (!key) throw new Error("The encryption key not loaded");
+    const subtle = window.crypto.subtle;
+    let iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const buf = (await subtle.encrypt(
+      { name: "AES-GCM", iv },
+      encrypt ? key.key : key.empty,
+      msg
+    )) as ArrayBuffer;
+    return Buffer.concat([iv, new Uint8Array(buf)]);
+  }
+
+  async function decrypt(buf: ArrayBuffer, encrypt: boolean) {
+    const u8 = new Uint8Array(buf);
+    const iv = u8.slice(0, 12);
+    const data = u8.slice(12);
+    const key = fetchEncryptionKey.state.value;
+    if (!key) throw new Error("The encryption key not loaded");
+    const subtle = window.crypto.subtle;
+    return (await subtle.decrypt(
+      { name: "AES-GCM", iv },
+      encrypt ? key.key : key.empty,
+      data
+    )) as ArrayBuffer;
   }
 
   // Automatically fetch user on wallet connection

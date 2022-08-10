@@ -9,15 +9,15 @@ import web3 = anchor.web3;
 import { useUserStore } from "../../store/userStore";
 import { useFileStore } from "../../store/fileStore";
 import Loader from "../utils/Loader.vue";
-import Dropzone from "../widgets/Dropzone.vue";
+
 import BackendSelect from "./BackendSelect.vue";
 import AccessSelect from "./AccessSelect.vue";
+import Content from "./Content.vue";
 
 const { api, wallet, connection } = useChainApi();
 const toast = useToast();
 const { user, fetchUser, encrypt, decrypt } = useUserStore();
 const router = useRouter();
-const dropzone = ref<null | InstanceType<typeof Dropzone>>(null);
 
 const props = defineProps<{
   id?: string;
@@ -146,43 +146,6 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
   }
 );
 
-// Rent cost
-const rentBase = ref(0);
-const rentPerByte = ref(0);
-const noteRentCost = computed(() => {
-  return rentBase.value + rentPerByte.value * note.value.length;
-});
-const noteRentCostStr = computed(() => {
-  const solVal = noteRentCost.value / 1e9;
-  if (noteRentCost.value == 0) return `loading storage cost...`;
-  else if (solVal < 1e-3) return `< ${solVal.toFixed(3)} SOL`;
-  else return `${solVal.toFixed(3)} SOL`;
-});
-const wordCountStr = computed(() => {
-  return `${note.value.length} characters`;
-});
-
-watch([note], () => {
-  const msg = note.value;
-  try {
-    const buf = encrypt(Buffer.from(msg), data.value.access == "private");
-    const decrypted = decrypt(buf, data.value.access == "private");
-    if (decrypted.toString() != msg) throw new Error("Encryption error");
-    data.value.content = buf;
-    console.log('encrypted', buf)
-  } catch (e) {
-    console.error("Encryption error:", (e as Error).message);
-    toast.error((e as Error).message);
-  }
-});
-
-onMounted(async () => {
-  // Fetch rent cost
-  rentBase.value = await connection.getMinimumBalanceForRentExemption(0);
-  rentPerByte.value =
-    (await connection.getMinimumBalanceForRentExemption(1)) - rentBase.value;
-});
-
 // Upload file
 const { uploadFile } = useFileStore();
 function upload() {
@@ -222,44 +185,10 @@ function navBack() {
       <AccessSelect v-model="data.access"></AccessSelect>
       <!--  -->
       <BackendSelect v-model="data.backend"></BackendSelect>
-      <!-- File type -->
-      <div class="mt-4 flex items-center">
-        <span class="opacity-50">File type</span>
-        <div class="tabs tabs-boxed ml-3">
-          <a
-            v-for="fileType in (['note', 'file'] as FileType[])"
-            class="tab"
-            :class="{ 'tab-active': data.type == fileType }"
-            @click="data.type = fileType"
-            >{{ fileType }}</a
-          >
-        </div>
-      </div>
-      <!-- File dropzone -->
-      <Dropzone
-        v-if="data.type == 'file'"
-        class="mt-2"
-        ref="dropzone"
-      ></Dropzone>
+      <!--  -->
+      <Content></Content>
       <!-- <label class="label mt-4"> Website </label> -->
-      <textarea
-        v-if="data.type == 'note'"
-        v-model="note"
-        class="textarea mt-4 min-h-[10rem]"
-        :class="{
-          'textarea-info': !emptyContent,
-          'textarea-error': emptyContent,
-        }"
-        placeholder="Note"
-      ></textarea>
-      <!-- Info line -->
-      <div class="flex mt-2">
-        <label class="whitespace-nowrap"> {{ wordCountStr }}</label>
-        <!-- Word count -->
-        <div class="w-full"></div>
-        <!-- Rent cost -->
-        <label class="whitespace-nowrap"> {{ noteRentCostStr }}</label>
-      </div>
+
       <!-- Save bar -->
       <div class="flex justify-end mt-6">
         <!-- Save btn -->

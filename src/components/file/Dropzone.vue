@@ -79,9 +79,7 @@ function processFile() {
 
     //
     console.log("encrypting...");
-    const a = Buffer.from(arrayBuffer);
-    console.log("encrypting...1");
-    encrypt(a, true);
+    encrypt(arrayBuffer, true);
     console.log("encrypted!");
   };
   reader.onerror = function (e: any) {

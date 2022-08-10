@@ -16,7 +16,6 @@
     "bs58": "^5.0.0",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.0",
-    "crypto-js": "^4.1.1",
     "popper.js": "^1.16.1",
     "solana-wallets-vue": "^0.4.2",
     "util": "^0.12.4",

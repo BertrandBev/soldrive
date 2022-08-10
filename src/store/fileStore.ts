@@ -41,7 +41,8 @@ function createFileStore() {
 
   let bundlr: WebBundlr | null = null;
   let readyPromise: Promise<void> | null = null;
-  const mbCost = ref(new BigNumber(0));
+  const mbCostArweave = ref(new BigNumber(0));
+  const mbCostSolana = ref(new BigNumber(0));
 
   watch(
     [wallet],
@@ -58,9 +59,12 @@ function createFileStore() {
         };
         bundlr = new WebBundlr("https://node1.bundlr.network", "solana", pvd);
         readyPromise = bundlr.ready();
-        // Load balance
+        // Ready up
         await readyPromise;
-        mbCost.value = await getCost(1e6);
+        // Load costs
+        mbCostArweave.value = await getCost(1e6);
+        const rent = await connection.getMinimumBalanceForRentExemption(1e6);
+        mbCostSolana.value = new BigNumber(rent);
       }
     },
     { immediate: true }
@@ -130,7 +134,8 @@ function createFileStore() {
     deposit,
     withdrawBalance,
     uploadFile,
-    mbCost,
+    mbCostArweave,
+    mbCostSolana,
   };
 }
 
