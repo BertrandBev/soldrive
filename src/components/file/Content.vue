@@ -110,8 +110,6 @@ watch(
     if (originalFilePrev != props.originalFile) {
       originalFilePrev = props.originalFile;
       isNote.value = props.file.fileExt == "" || props.file.fileExt == "txt";
-      // DOWNLOAD
-      console.log("Download...");
       await download();
     }
   },
@@ -121,7 +119,7 @@ watch(
 // Uniform data accessors
 const data = computed(() => {
   let buffer: ArrayBuffer | null = null;
-  if (isNote.value) buffer = noteBuf.value;
+  if (isNote.value && noteBuf.value) buffer = noteBuf.value;
   else if (dropzone.value?.data) buffer = dropzone.value.data;
   else if (downloadedData.value) buffer = downloadedData.value;
   return buffer || new ArrayBuffer(0);
@@ -167,7 +165,7 @@ const updated = computed(() => {
   return (
     props.originalFile.access != props.file.access ||
     props.originalFile.backend != props.file.backend ||
-    (!isNote.value && dropzone.value!.data != null) ||
+    (!isNote.value && dropzone.value?.data != null) ||
     (isNote.value && noteUpdated.value)
   );
 });
@@ -206,7 +204,8 @@ const {
       // Arweave backend, get balance
       const balance = await getBalance();
       const cost = await getCost(size);
-      if (balance.comparedTo(cost) <= 0) await depositModal.value?.open(size);
+      if (balance.comparedTo(cost) <= 0)
+        await depositModal.value?.open(size / 1e6);
       // Upload file
       const id = await uploadFile(encrypted);
       // Pack file metadata
@@ -241,6 +240,16 @@ const fileMeta = computed(() => ({
   size: props.file.fileSize.toNumber(),
 }));
 
+function onFile(name: string) {
+  if (!props.file.name) {
+    props.setFileName(name);
+  }
+}
+
+const infoBanner = computed(() => {
+  return downloading.value || downloadError.value || uploading.value;
+});
+
 defineExpose({ upload, updated });
 </script>
 
@@ -266,7 +275,7 @@ defineExpose({ upload, updated });
     </div>
     <!-- Loader -->
     <div
-      v-if="downloading || downloadError || uploading || uploadError"
+      v-if="infoBanner"
       class="h-[168px] w-full flex justify-center items-center"
     >
       <div
@@ -275,14 +284,6 @@ defineExpose({ upload, updated });
         @click="downloadError = null"
       >
         File loading error
-        <XIcon class="w-5 h-5"></XIcon>
-      </div>
-      <div
-        v-else-if="uploadError"
-        class="btn btn-ghost text-red-300 gap-2"
-        @click="uploadError = null"
-      >
-        File upload error
         <XIcon class="w-5 h-5"></XIcon>
       </div>
       <template v-else>
@@ -295,14 +296,15 @@ defineExpose({ upload, updated });
 
     <!-- File dropzone -->
     <Dropzone
-      v-else-if="!isNote"
+      v-show="!infoBanner && !isNote"
       :file-meta="fileMeta"
+      :on-file="onFile"
       class="mt-4"
       ref="dropzone"
     ></Dropzone>
     <!-- Note area -->
     <textarea
-      v-else
+      v-show="!infoBanner && isNote"
       v-model="note"
       class="textarea mt-4 min-h-[10rem]"
       :class="{

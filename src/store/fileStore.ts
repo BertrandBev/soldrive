@@ -52,13 +52,15 @@ function createFileStore() {
         const pvd = {
           publicKey: wallet.value.publicKey,
           sendTransaction: async (tx: Transaction) => {
-            await provider.value?.sendAndConfirm(tx);
+            return await provider.value?.sendAndConfirm(tx);
           },
           signMessage: async (msg: Uint8Array) => {
             return wallet.value?.signMessage(msg);
           },
         };
-        bundlr = new WebBundlr("https://node1.bundlr.network", "solana", pvd);
+        bundlr = new WebBundlr("https://node1.bundlr.network", "solana", pvd, {
+          timeout: 60e3,
+        });
         readyPromise = bundlr.ready();
         // Ready up
         await readyPromise;

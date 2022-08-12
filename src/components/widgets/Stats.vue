@@ -20,9 +20,9 @@ const byteCountStr = computed(() => {
 </script>
 
 <template>
-  <div class="stats shadow bg-primary text-white">
+  <div class="stats shadow bg-primary text-neutral">
     <div class="stat">
-      <div class="stat-figure text-secondary">
+      <div class="stat-figure text-neutral">
         <DocumentIcon class="w-[32px] h-[32px]"></DocumentIcon>
       </div>
       <div class="stat-title">Files</div>
@@ -31,7 +31,7 @@ const byteCountStr = computed(() => {
     </div>
 
     <div class="stat">
-      <div class="stat-figure text-secondary">
+      <div class="stat-figure text-neutral">
         <FolderIcon class="w-[32px] h-[32px]"></FolderIcon>
       </div>
       <div class="stat-title">Folders</div>
@@ -40,7 +40,7 @@ const byteCountStr = computed(() => {
     </div>
 
     <div class="stat">
-      <div class="stat-figure text-secondary">
+      <div class="stat-figure text-neutral">
         <DatabaseIcon class="w-[32px] h-[32px]"></DatabaseIcon>
       </div>
       <div class="stat-title">Chain space</div>

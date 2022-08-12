@@ -9,6 +9,11 @@ import ContextMenu from "../utils/ContextMenu.vue";
 
 // File icons
 import textLogo from "../../assets/files/word.png";
+import pdfLogo from "../../assets/files/pdf.png";
+import videoLogo from "../../assets/files/video.png";
+import wordLogo from "../../assets/files/word.png";
+import mp3Logo from "../../assets/files/mp3.png";
+import zipLogo from "../../assets/files/zip.png";
 
 const { api, wallet } = useChainApi();
 const { isLoggedIn } = useUserStore();
@@ -22,6 +27,14 @@ const props = defineProps<{
 const menu = ref<null | InstanceType<typeof ContextMenu>>(null);
 
 function fileIcon() {
+  switch (props.file.fileExt) {
+    case "pdf":
+      return pdfLogo;
+    case "mov":
+    case "avi":
+      return videoLogo;
+  }
+  // Default file
   return textLogo;
 }
 

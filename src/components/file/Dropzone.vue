@@ -53,17 +53,22 @@ type AcceptedFile = {
   text: () => Promise<string>;
 };
 
+// let cachedFile: AcceptedFile | null = null;
+// function onDrop(files: AcceptedFile[]) {
+//   cachedFile = files.length > 0 ? files[0] : null;
+// }
+
 const {
   getRootProps,
   getInputProps,
   isDragActive,
-  isDragAccept,
   acceptedFiles,
   fileRejections,
 } = useDropzone({ maxFiles: 1, maxSize: MAX_SIZE, multiple: false });
 
 const props = defineProps<{
   fileMeta: { name: string; ext: string; size: number } | null;
+  onFile: (name: string) => void;
 }>();
 
 const file = computed(() => {
@@ -92,14 +97,6 @@ const fileMeta = computed(() => {
   }
 });
 
-watch(
-  [fileMeta],
-  () => {
-    console.log("META", fileMeta.value);
-  },
-  { immediate: true }
-);
-
 const fileName = computed(() => {
   return fileMeta?.value?.ext
     ? `${fileMeta?.value.name}.${fileMeta?.value.ext}`
@@ -117,6 +114,7 @@ function processFile() {
       const arrayBuffer = e.target.result as ArrayBuffer;
       data.value = arrayBuffer;
       progress.value = 0;
+      props.onFile(fileMeta.value?.name || "");
     };
     reader.onerror = function (e: any) {
       console.error("File loading error", e);
@@ -165,7 +163,7 @@ watch([file], () => processFile());
       >
         <p v-if="errMsg" class="text-red-300">{{ errMsg }}</p>
         <p v-else-if="isDragActive">Drop the file now!</p>
-        <p v-else-if="fileMeta" class="text-green-300">
+        <p v-else-if="fileMeta?.name" class="text-green-300">
           {{ fileName }} ({{ spaceString(fileMeta.size) }})
         </p>
         <p v-else>Drop a file here, or click to select a file</p>

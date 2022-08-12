@@ -4,7 +4,7 @@ import { useRoute } from "vue-router";
 const route = useRoute();
 
 const menuItems = [
-  { name: "Collections", route: "/" },
+  { name: "Home", route: "/" },
   { name: "Account", route: "/account" },
 ];
 </script>

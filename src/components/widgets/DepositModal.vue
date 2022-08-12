@@ -20,15 +20,18 @@ const toast = useToast();
 const modalOpen = ref(false);
 const minSizeMb = ref(0);
 const amountMb = ref(0);
+
 const amountError = computed(() => {
   if (isNaN(amountMb.value) || amountMb.value <= 0) return "Invalid amount";
   if (amountMb.value > 1e9) return "Must be < 1TB";
   if (minSizeMb.value > 0 && amountMb.value < minSizeMb.value)
     return `Must be > ${minSizeMb.value}MB`;
 });
+
 const amountLamports = computed(() => {
   return Math.ceil(amountMb.value * mbCostArweave.value.toNumber());
 });
+
 const cryptoCostStr = computed(() => {
   return `${(amountLamports.value / LAMPORTS_PER_SOL).toFixed(4)} SOL`;
 });
@@ -51,6 +54,7 @@ const { execute: depositFunds, isLoading: depositLoading } = useAsyncState(
   {
     immediate: false,
     onError: (e) => {
+      callback.reject(e);
       console.error(e);
       toast.error((e as Error).message);
     },
@@ -60,6 +64,7 @@ const { execute: depositFunds, isLoading: depositLoading } = useAsyncState(
 async function open(minSizeInMb: number) {
   minSizeMb.value = minSizeInMb;
   modalOpen.value = true;
+  amountMb.value = Math.ceil(minSizeInMb);
   return new Promise<void>((resolve, reject) => {
     callback.resolve = resolve;
     callback.reject = reject;
@@ -68,7 +73,7 @@ async function open(minSizeInMb: number) {
 
 function close() {
   modalOpen.value = false;
-  callback.reject("Closed");
+  callback.reject(new Error("Operation cancelled"));
 }
 
 defineExpose({ open });

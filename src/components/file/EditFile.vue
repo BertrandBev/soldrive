@@ -159,11 +159,6 @@ function navBack() {
 }
 
 const updated = computed(() => {
-  console.log(
-    "updated",
-    content.value?.updated,
-    data.value.originalFile.name != data.value.file.name
-  );
   return (
     content.value?.updated ||
     data.value.originalFile.name != data.value.file.name

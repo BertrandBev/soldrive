@@ -37,8 +37,13 @@ const { execute: withdraw, isLoading: withdrawLoading } = useAsyncState(
 );
 
 //
-function openDeposit() {
-  depositModal.value!.open(0);
+async function openDeposit() {
+  try {
+    await depositModal.value!.open(0);
+    loadBalance();
+  } catch (e) {
+    // Ignore
+  }
 }
 
 // Retrieve balance
@@ -46,7 +51,7 @@ const balance = ref<BigNumber | null>(null);
 const storageBalanceStr = ref("");
 const cryptoBalanceStr = ref("");
 
-async function loadFileBalance() {
+async function loadBalance() {
   // Loading state
   storageBalanceStr.value = "...";
   cryptoBalanceStr.value = "";
@@ -72,7 +77,7 @@ const wallet = useAnchorWallet();
 watch(
   [mbCostArweave],
   () => {
-    loadFileBalance();
+    loadBalance();
   },
   { immediate: true }
 );
@@ -91,11 +96,27 @@ watch(
         </div>
         <div class="stat-value">
           <div>{{ storageBalanceStr }}</div>
-          <div class="text-xl text-gray-300">{{ cryptoBalanceStr }}</div>
+          <div class="text-xl text-neutral">{{ cryptoBalanceStr }}</div>
         </div>
         <div class="stat-actions">
-          <button class="btn btn-sm" @click="openDeposit">Deposit</button>
-          <button class="btn btn-sm ml-2" @click="modalOpen = true">
+          <button
+            class="btn btn-sm"
+            :class="{
+              'btn-disabled': !storageBalanceStr,
+              'text-neutral-focus': !storageBalanceStr,
+            }"
+            @click="openDeposit"
+          >
+            Deposit
+          </button>
+          <button
+            class="btn btn-sm ml-2"
+            :class="{
+              'btn-disabled': !storageBalanceStr,
+              'text-neutral-focus': !storageBalanceStr,
+            }"
+            @click="modalOpen = true"
+          >
             Withdraw
           </button>
         </div>
