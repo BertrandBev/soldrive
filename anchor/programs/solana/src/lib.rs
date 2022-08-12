@@ -87,13 +87,18 @@ pub mod soldrive {
         max_size: u32,
         parent: u32,
         name: String,
-        file_type: FileType,
+        file_ext: String,
+        file_size: u64,
         access: Access,
         backend: Backend,
         content: Vec<u8>,
     ) -> Result<()> {
         // Check args
         require!(name.len() <= File::NAME_MAX_LEN, ErrorCode::StringTooLong);
+        require!(
+            file_ext.len() <= File::EXT_MAX_LEN,
+            ErrorCode::StringTooLong
+        );
         let user = &mut ctx.accounts.user;
         let file = &mut ctx.accounts.file;
         require!(user.folder_id < u32::MAX, ErrorCode::FileCountExceeded);
@@ -110,7 +115,8 @@ pub mod soldrive {
         file.size = content.len() as u32;
         file.parent = parent;
         file.name = name;
-        file.file_type = file_type;
+        file.file_ext = file_ext;
+        file.file_size = file_size;
         file.access = access;
         file.backend = backend;
 
@@ -126,6 +132,8 @@ pub mod soldrive {
         _id: u32,
         parent: Option<u32>,
         name: Option<String>,
+        file_ext: Option<String>,
+        file_size: Option<u64>,
         access: Option<Access>,
         backend: Option<Backend>,
         content: Option<Vec<u8>>,
@@ -139,6 +147,16 @@ pub mod soldrive {
         if let Some(name) = name {
             require!(name.len() <= File::NAME_MAX_LEN, ErrorCode::StringTooLong);
             file.name = name;
+        }
+        if let Some(file_ext) = file_ext {
+            require!(
+                file_ext.len() <= File::EXT_MAX_LEN,
+                ErrorCode::StringTooLong
+            );
+            file.file_ext = file_ext;
+        }
+        if let Some(file_size) = file_size {
+            file.file_size = file_size;
         }
         if let Some(access) = access {
             file.access = access;
@@ -325,12 +343,6 @@ impl Folder {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Debug)]
-pub enum FileType {
-    File,
-    Note,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Debug)]
 pub enum Backend {
     Solana,
     Arweave,
@@ -350,7 +362,8 @@ pub struct File {
     pub created_at: i64,
     pub parent: u32,
     pub name: String,
-    pub file_type: FileType,
+    pub file_ext: String,
+    pub file_size: u64,
     pub access: Access,
     pub backend: Backend,
     pub size: u32,
@@ -363,7 +376,8 @@ pub struct FileEncoder {
 
 impl File {
     const PADDING: usize = 64;
-    const NAME_MAX_LEN: usize = 32;
+    const NAME_MAX_LEN: usize = 48;
+    const EXT_MAX_LEN: usize = 4;
 
     fn size(byte_count: u32) -> usize {
         8                                 // discriminator
@@ -372,7 +386,8 @@ impl File {
         + 8                               // created_at
         + 4                               // parent
         + 4 + File::NAME_MAX_LEN          // name
-        + std::mem::size_of::<FileType>() // file_type
+        + 4 + File::EXT_MAX_LEN           // file_ext
+        + 8                               // file_size
         + std::mem::size_of::<Access>()   // access
         + std::mem::size_of::<Backend>()  // backend
         + 4                               // size

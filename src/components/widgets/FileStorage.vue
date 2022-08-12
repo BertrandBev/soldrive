@@ -12,8 +12,14 @@ const modalOpen = ref(false);
 const infoModalOpen = ref(false);
 const depositModal = ref<null | InstanceType<typeof DepositModal>>(null);
 
-const { deposit, getBalance, getCost, uploadFile, withdrawBalance, mbCost } =
-  useFileStore();
+const {
+  deposit,
+  getBalance,
+  getCost,
+  uploadFile,
+  withdrawBalance,
+  mbCostArweave,
+} = useFileStore();
 const toast = useToast();
 
 const { execute: withdraw, isLoading: withdrawLoading } = useAsyncState(
@@ -47,14 +53,16 @@ async function loadFileBalance() {
   // Retrieve balances
   try {
     balance.value = await getBalance();
-    if (mbCost.value.isZero()) throw new Error("Cost not loaded");
+    if (mbCostArweave.value.isZero()) throw new Error("Cost not loaded");
   } catch (e) {
     // console.error(e);
     storageBalanceStr.value = "";
     return;
   }
   // Finish loading
-  const mbAllowed = balance.value.dividedBy(mbCost.value).multipliedBy(1e6);
+  const mbAllowed = balance.value
+    .dividedBy(mbCostArweave.value)
+    .multipliedBy(1e6);
   storageBalanceStr.value = spaceString(mbAllowed.toNumber(), 1);
   cryptoBalanceStr.value =
     balance.value.dividedBy(LAMPORTS_PER_SOL).toFixed(4) + " SOL";
@@ -62,7 +70,7 @@ async function loadFileBalance() {
 
 const wallet = useAnchorWallet();
 watch(
-  [mbCost],
+  [mbCostArweave],
   () => {
     loadFileBalance();
   },
@@ -98,8 +106,9 @@ watch(
       <div class="modal-box">
         <!-- <h3 class="font-bold text-lg">Withdraw file storage funds</h3> -->
         <p class="py-2">
-          Permanant file storage on Arweave requires funds to be deposited. Deposited
-          funds can be withdrawn at any time, and will only be spent when uploading files
+          Permanant file storage on Arweave requires funds to be deposited.
+          Deposited funds can be withdrawn at any time, and will only be spent
+          when uploading files
         </p>
         <div class="modal-action">
           <div class="btn" @click="infoModalOpen = false">Close</div>

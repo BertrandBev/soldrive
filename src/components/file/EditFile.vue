@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { ref, watch, watchEffect, computed, onMounted } from "vue";
-import { useChainApi, FileType, Access, Backend } from "../../api/chain-api";
+import { ref, watch, watchEffect, computed, onMounted, nextTick } from "vue";
+import { useChainApi, Access, Backend, File } from "../../api/chain-api";
 import { useAsyncState, useThrottleFn } from "@vueuse/core";
 import { useRouter } from "vue-router";
 import * as anchor from "@project-serum/anchor";
 import { useToast } from "vue-toastification";
 import web3 = anchor.web3;
 import { useUserStore } from "../../store/userStore";
-import { useFileStore } from "../../store/fileStore";
 import Loader from "../utils/Loader.vue";
 import Content from "./Content.vue";
 
@@ -16,7 +15,7 @@ import AccessSelect from "./AccessSelect.vue";
 
 const { api, wallet, connection } = useChainApi();
 const toast = useToast();
-const { user, fetchUser, encrypt, decrypt } = useUserStore();
+const { user, fetchUser, isLoggedIn } = useUserStore();
 const router = useRouter();
 
 const props = defineProps<{
@@ -34,27 +33,30 @@ const isNew = computed(() => {
   return fileId.value == undefined;
 });
 
-// Content
-const note = ref("");
-
 // File data
 const data = ref({
   loaded: false,
-  name: "",
-  parent: 0,
-  // Default
-  access: "private" as Access,
-  type: "note" as FileType,
-  backend: "solana" as Backend,
-  content: Buffer.from("", "base64"),
+  file: {
+    name: "",
+    parent: 0,
+    // // Default
+    access: "private" as Access,
+    fileExt: "",
+    fileSize: new anchor.BN(0),
+    backend: "solana" as Backend,
+    content: new ArrayBuffer(0),
+  } as File,
 });
+
+// Shortcut
+const file = computed(() => data.value.file);
 
 // Get file
 const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
   async () => {
     if (isNew.value) {
       // New file
-      data.value.parent = parseInt(props.folder) || 0;
+      file.value.parent = parseInt(props.folder) || 0;
     } else {
       // Existing file
       const res = await api.value?.fetchFile(fileId.value!, true);
@@ -63,25 +65,27 @@ const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
       } else {
         // Populate fields
         data.value.loaded = true;
-        data.value.name = res.name;
-        data.value.parent = res.parent;
-        data.value.access = res.access;
-        data.value.content = res.content;
-        note.value = decrypt(
-          res.content,
-          data.value.access == "private"
-        ).toString();
+        data.value.file = res;
       }
     }
   },
-  null
+  null,
+  {
+    onError: (e) => {
+      console.error(e);
+    },
+  }
 );
 
 //
 const emptyName = ref(false);
-watch([data.value.name], () => {
-  emptyName.value = data.value.name.length == 0;
-});
+watch(
+  [file],
+  () => {
+    emptyName.value = file.value.name.length == 0;
+  },
+  { deep: true }
+);
 
 const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
   async () => {
@@ -96,25 +100,24 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
       toast.error("A valid file name must be provided");
       return;
     }
-    // Check content
-    if (!content.value?.validate()) {
-      return;
-    }
-    // Upload content if needed
+    // Retrieve content
+    // Don't repace file.content in here to prevent reactive download from Content
+    const payload = await content.value!.upload();
+    file.value.fileExt = payload.fileExt;
+    file.value.fileSize = new anchor.BN(payload.fileSize);
 
     if (isNew.value) {
       // Create file
       const id = user.value.fileId + 1;
-      await api.value?.createFile(
-        id,
-        data.value.content.length,
-        data.value.parent,
-        data.value.name,
-        data.value.type,
-        data.value.access,
-        data.value.backend,
-        data.value.content
-      );
+      console.log("file", {
+        ...file.value,
+        content: payload.content,
+      });
+      await api.value?.createFile(id, payload.content.byteLength, {
+        ...file.value,
+        content: payload.content,
+      } as File);
+
       // Bump id
       await fetchUser.execute();
       toast.success("File successfully created!");
@@ -125,14 +128,15 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
         return;
       }
       // Update file
-      await api.value?.updateFile(
-        fileId.value!,
-        data.value.parent,
-        data.value.name,
-        data.value.access,
-        data.value.backend,
-        data.value.content
-      );
+      await api.value?.updateFile(fileId.value!, {
+        parent: file.value.parent,
+        name: file.value.name,
+        fileExt: file.value.fileExt,
+        fileSize: file.value.fileSize,
+        access: file.value.access,
+        backend: file.value.backend,
+        content: payload.content,
+      });
       toast.success("File successfully updated!");
     }
     // Nav back
@@ -147,10 +151,8 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
   }
 );
 
-// Upload file
-const { uploadFile } = useFileStore();
-function upload() {
-  uploadFile();
+function setFilename(name: string) {
+  file.value.name = name;
 }
 
 function navBack() {
@@ -161,8 +163,10 @@ function navBack() {
 
 <template>
   <div class="w-full flex flex-col items-center p-5">
+    <!--  -->
+    <div v-if="!isLoggedIn">Please login</div>
     <!-- Loader -->
-    <Loader v-if="fileLoading"></Loader>
+    <Loader v-else-if="fileLoading"></Loader>
     <div v-else-if="fileLoadingError">File loading error</div>
     <!-- Card -->
     <div v-else class="card w-full border border-info flex-col p-6">
@@ -170,7 +174,7 @@ function navBack() {
         <!-- Name -->
         <div class="flex flex-col w-full">
           <input
-            v-model="data.name"
+            v-model="file.name"
             class="input input-info input-bordered w-full"
             :class="{
               'input-info': !emptyName,
@@ -183,19 +187,15 @@ function navBack() {
         <!-- Encryption -->
       </div>
       <!--  -->
-      <AccessSelect v-model="data.access"></AccessSelect>
+      <AccessSelect v-model="file.access"></AccessSelect>
       <!--  -->
-      <BackendSelect v-model="data.backend"></BackendSelect>
+      <BackendSelect v-model="file.backend"></BackendSelect>
       <!--  -->
       <Content
         ref="content"
-        :backend="data.backend"
-        :content="data.content"
-        :file-type="data.type"
+        :file="file"
         :is-new="isNew"
-        :encrypt="data.access == 'private'"
-        :set-content="(buf) => (data.content = buf)"
-        :set-file-type="(type) => (data.type = type)"
+        :set-file-name="setFilename"
       ></Content>
       <!-- <label class="label mt-4"> Website </label> -->
 

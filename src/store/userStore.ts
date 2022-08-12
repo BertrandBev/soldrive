@@ -57,17 +57,6 @@ function createUserStore() {
       if (!wallet.value || !api.value) return;
       const user = await api.value.fetchUser();
       await fetchEncryptionKey.execute();
-      // TEST ENCRYPTION
-      const enc = new TextEncoder();
-      const dec = new TextDecoder();
-
-      const buf = enc.encode("test");
-      const encrypted = await encrypt(buf.buffer, true);
-      console.log("encrypted", buf, encrypted);
-      const decrypted = await decrypt(encrypted, true);
-      console.log("decrypted", decrypted, dec.decode(decrypted));
-
-      //
       return user;
     },
     null,

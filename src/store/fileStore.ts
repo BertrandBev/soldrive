@@ -9,6 +9,7 @@ import { watch, ref } from "vue";
 import { Connection, Transaction } from "@solana/web3.js";
 import BigNumber from "bignumber.js";
 const FORCE_ANCHOR_WALLET = true;
+import axios from "axios";
 
 export function spaceString(
   val: number,
@@ -116,7 +117,15 @@ function createFileStore() {
     // Sign and send transaction
     await tx.sign();
     const result = await tx.upload();
-    console.log("result:", result);
+    if (!result.data || !result.data.id) throw new Error("File upload failed");
+    return result.data.id;
+  }
+
+  async function downloadFile(id: string) {
+    const url = `https://arweave.net/${id}`;
+    const resp = await axios.get(url, { responseType: "blob" });
+    if (resp.data instanceof Blob) return resp.data.arrayBuffer();
+    else throw new Error("Invalid file id");
   }
 
   return {
@@ -125,6 +134,7 @@ function createFileStore() {
     deposit,
     withdrawBalance,
     uploadFile,
+    downloadFile,
     mbCostArweave,
     mbCostSolana,
   };

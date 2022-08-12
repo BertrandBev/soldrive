@@ -33,7 +33,6 @@ export type File = FileRaw & {
 };
 
 export type Access = "private" | "publicRead" | "publicReadWrite";
-export type FileType = "file" | "note";
 export type Backend = "solana" | "arweave";
 
 export function getAPI(
@@ -114,24 +113,9 @@ export function getAPI(
       "File",
       accountInfo.data
     ) as File;
-    // Update access
-    // const access = decoded.access;
-    // Object.keys(access).forEach((key) => {
-    //   const camelCase = key[0].toLowerCase() + key.slice(1);
-    //   decoded.access = camelCase as Access;
-    // });
-    // const fileType = decoded.fileType;
-    // Object.keys(fileType).forEach((key) => {
-    //   const camelCase = key[0].toLowerCase() + key.slice(1);
-    //   decoded.fileType = camelCase as FileType;
-    // });
-    // const backend = decoded.backend;
-    // Object.keys(backend).forEach((key) => {
-    //   const camelCase = key[0].toLowerCase() + key.slice(1);
-    //   decoded.backend = camelCase as Backend;
-    // });
+
+    // Update enums
     decoded.access = parseEnum<Access>(decoded.access);
-    decoded.fileType = parseEnum<FileType>(decoded.fileType);
     decoded.backend = parseEnum<Backend>(decoded.backend);
 
     // Fetch content
@@ -236,26 +220,22 @@ export function getAPI(
 
   async function createFile(
     id: number,
-    max_size: number,
-    parent: number,
-    name: string,
-    fileType: FileType,
-    access: Access,
-    backend: Backend,
-    content: Buffer,
+    maxSize: number,
+    file: File,
     signers: web3.Keypair[] = defaultSigners
   ) {
     const userPda = await getUserPda();
     const filePda = await getFilePda(id);
     await program.methods
       .createFile(
-        max_size,
-        parent,
-        name,
-        { [fileType]: {} },
-        { [access]: {} },
-        { [backend]: {} },
-        content
+        maxSize,
+        file.parent,
+        file.name,
+        file.fileExt,
+        file.fileSize,
+        { [file.access]: {} },
+        { [file.backend]: {} },
+        file.content
       )
       .accounts({
         user: userPda.publicKey,
@@ -288,18 +268,31 @@ export function getAPI(
 
   async function updateFile(
     id: number,
-    parent?: number,
-    name?: string,
-    access?: Access,
-    backend?: Backend,
-    content?: Buffer,
+    updates: {
+      parent?: number;
+      name?: string;
+      fileExt?: string;
+      fileSize?: anchor.BN;
+      access?: Access;
+      backend?: Backend;
+      content?: ArrayBuffer | Buffer;
+    },
     signers: web3.Keypair[] = defaultSigners
   ) {
     const filePda = await getFilePda(id);
-    const accessEnum = access ? { [access]: {} } : null;
-    const backendEnum = backend ? { [backend]: {} } : null;
+    const accessEnum = updates.access ? { [updates.access]: {} } : null;
+    const backendEnum = updates.backend ? { [updates.backend]: {} } : null;
     return program.methods
-      .updateFile(id, parent, name, accessEnum, backendEnum, content)
+      .updateFile(
+        id,
+        updates.parent || null,
+        updates.name || null,
+        updates.fileExt || null,
+        updates.fileSize || null,
+        accessEnum,
+        backendEnum,
+        updates.content || null
+      )
       .accounts({
         file: filePda.publicKey,
         authority: authority,
@@ -317,7 +310,7 @@ export function getAPI(
       ids.map(async (id) => {
         const filePda = await getFilePda(id);
         return program.methods
-          .updateFile(id, parent, null, null, null, null)
+          .updateFile(id, parent, null, null, null, null, null, null)
           .accounts({
             file: filePda.publicKey,
             authority: authority,

@@ -62,6 +62,10 @@ const {
   fileRejections,
 } = useDropzone({ maxFiles: 1, maxSize: MAX_SIZE, multiple: false });
 
+const props = defineProps<{
+  fileMeta: { name: string; ext: string; size: 0 } | null;
+}>();
+
 const file = computed(() => {
   if (acceptedFiles.value.length == 0) return null;
   return acceptedFiles.value[0] as AcceptedFile;
@@ -69,31 +73,62 @@ const file = computed(() => {
 
 const progress = ref(0);
 const processingError = ref(false);
+// File
 const data = ref<ArrayBuffer | null>();
+const fileMeta = computed(() => {
+  if (file.value) {
+    const filename = file.value.name || "";
+    // Populate file value
+    const parts = filename.split(".").reverse();
+    const ext = parts.length > 0 ? parts[0] : "";
+    const name = parts.slice(1).reverse().join(".");
+    return {
+      name,
+      ext,
+      size: file.value?.size || 0,
+    };
+  } else {
+    return props.fileMeta;
+  }
+});
+
+watch(
+  [fileMeta],
+  () => {
+    console.log("META", fileMeta.value);
+  },
+  { immediate: true }
+);
+
+const fileName = computed(() => {
+  return fileMeta?.value?.ext
+    ? `${fileMeta?.value.name}.${fileMeta?.value.ext}`
+    : fileMeta.value?.name || "";
+});
 
 function processFile() {
-  if (!file.value) return;
-  data.value = null;
-  const reader = new FileReader();
-  progress.value = 0;
-  processingError.value = false;
-  reader.onload = async function (e: any) {
-    const arrayBuffer = e.target.result as ArrayBuffer;
-    data.value = arrayBuffer;
-    console.log("encrypting...");
-    data.value = await encrypt(arrayBuffer, true);
-    console.log("encrypted!");
+  if (file.value) {
+    // Read file if needed
+    data.value = null;
+    const reader = new FileReader();
     progress.value = 0;
-  };
-  reader.onerror = function (e: any) {
-    console.error("File loading error", e);
-    processingError.value = true;
-    progress.value = 0;
-  };
-  reader.onprogress = function (ev) {
-    progress.value = Math.ceil((ev.loaded / ev.total) * 100);
-  };
-  reader.readAsArrayBuffer(file.value as File);
+    processingError.value = false;
+    reader.onload = async function (e: any) {
+      const arrayBuffer = e.target.result as ArrayBuffer;
+      data.value = arrayBuffer;
+      data.value = await encrypt(arrayBuffer, true);
+      progress.value = 0;
+    };
+    reader.onerror = function (e: any) {
+      console.error("File loading error", e);
+      processingError.value = true;
+      progress.value = 0;
+    };
+    reader.onprogress = function (ev) {
+      progress.value = Math.ceil((ev.loaded / ev.total) * 100);
+    };
+    reader.readAsArrayBuffer(file.value as File);
+  }
 }
 
 const errMsg = computed(() => {
@@ -113,18 +148,7 @@ const errMsg = computed(() => {
   }
 });
 
-async function upload() {
-  if (!data.value) throw new Error("Empty file");
-  // Get balance
-  const balance = await getBalance();
-  const cost = await getCost(data.value.byteLength);
-  if (balance.comparedTo(cost) <= 0)
-    await depositModal.value?.open(data.value.byteLength);
-  // Upload file
-  await uploadFile(data.value);
-}
-
-defineExpose({ data, upload });
+defineExpose({ data, fileMeta });
 
 watch([file], () => processFile());
 </script>
@@ -142,7 +166,9 @@ watch([file], () => processFile());
       >
         <p v-if="errMsg" class="text-red-300">{{ errMsg }}</p>
         <p v-else-if="isDragActive">Drop the file now!</p>
-        <p v-else-if="file" class="text-green-300">{{ file.name }}</p>
+        <p v-else-if="fileMeta" class="text-green-300">
+          {{ fileName }} ({{ spaceString(fileMeta.size) }})
+        </p>
         <p v-else>Drop a file here, or click to select a file</p>
         <progress
           v-if="progress"
@@ -152,8 +178,6 @@ watch([file], () => processFile());
         ></progress>
       </div>
     </div>
-    <!-- Deposit modal -->
-    <DepositModal ref="depositModal"></DepositModal>
   </div>
 </template>
 

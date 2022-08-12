@@ -97,21 +97,21 @@ describe("soldrive", () => {
     const name = "my file";
     const content = Buffer.from("some content");
     const maxSize = 2 * content.length;
-    await createFile(
-      id,
-      maxSize,
+    await createFile(id, maxSize, {
       parent,
       name,
-      "file",
-      "private",
-      "solana",
-      Buffer.from(content)
-    );
+      fileExt: "txt",
+      fileSize: new anchor.BN(content.length),
+      backend: "solana",
+      access: "private",
+      content,
+    } as File);
     const file = await fetchFile(id, true);
     assert.equal(file.id, id);
     assert.equal(file.parent, parent);
     assert.equal(file.name, name);
-    assert.equal(file.fileType, "file");
+    assert.equal(file.fileExt, "txt");
+    assert.equal(file.fileSize.toNumber(), content.length);
     assert.equal(file.access, "private");
     assert.equal(file.backend, "solana");
     assert.equal(file.content.toString(), content.toString());
@@ -128,11 +128,11 @@ describe("soldrive", () => {
     const parent = 2;
     const name = "my file 2";
     const content = Buffer.from("some content" + "some content"); // Up to 2x the size
-    await updateFile(id, parent, null, null, null, null);
-    await updateFile(id, null, name, null, null, null);
-    await updateFile(id, null, null, "publicRead", null, null);
-    await updateFile(id, null, null, null, "arweave", null);
-    await updateFile(id, null, null, null, null, Buffer.from(content));
+    await updateFile(id, { parent });
+    await updateFile(id, { name });
+    await updateFile(id, { access: "publicRead" });
+    await updateFile(id, { backend: "arweave" });
+    await updateFile(id, { content: Buffer.from(content) });
 
     const file = await fetchFile(id, true);
     assert.equal(file.id, id);
@@ -150,16 +150,15 @@ describe("soldrive", () => {
     const name = "second file";
     const content = Buffer.from("some content");
     const maxSize = 2 * content.length;
-    await createFile(
-      id,
-      maxSize,
+    await createFile(id, maxSize, {
       parent,
       name,
-      "file",
-      "private",
-      "solana",
-      Buffer.from(content)
-    );
+      fileExt: "txt",
+      fileSize: new anchor.BN(content.length),
+      access: "private",
+      backend: "solana",
+      content: Buffer.from(content),
+    } as File);
 
     // Now update parents
     await updateFiles([1, 2], 2);
