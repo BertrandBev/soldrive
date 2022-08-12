@@ -39,7 +39,7 @@ const dropzone = ref<null | InstanceType<typeof Dropzone>>(null);
 const depositModal = ref<null | InstanceType<typeof DepositModal>>(null);
 const emptyContent = ref(false);
 const note = ref("");
-const encryptedNote = ref<ArrayBuffer | null>();
+const encryptedNote = ref<Buffer | null>();
 
 const wordCountStr = computed(() => {
   return `${note.value.length} characters`;
@@ -49,7 +49,7 @@ const wordCountStr = computed(() => {
 const data = computed(() => {
   return (
     (isNote.value ? encryptedNote.value : dropzone.value?.data) ||
-    new ArrayBuffer(0)
+    Buffer.alloc(0)
   );
 });
 
@@ -61,7 +61,7 @@ const fileExt = computed(() => {
   if (isNote.value) {
     return "txt";
   } else {
-    return dropzone.value?.fileMeta.ext || "";
+    return dropzone.value?.fileMeta?.ext || "";
   }
 });
 
@@ -83,7 +83,7 @@ const noteRentCostStr = computed(() => {
   else return `Cost ${solVal.toFixed(3)} SOL`;
 });
 
-watch([note], async () => {
+watch([note, isEncrypted], async () => {
   emptyContent.value = note.value.length == 0;
   const msg = note.value;
   try {
@@ -106,7 +106,7 @@ async function upload() {
     throw new Error(isNote.value ? "Empty note" : "Select a valid file");
   }
   // TODO: cache meta
-  let content: ArrayBuffer;
+  let content: Buffer;
   // Upload file content if needed
   if (!isSolana.value) {
     // Arweave backend, get balance
@@ -166,18 +166,22 @@ const {
     }
   },
   null,
-  { immediate: false }
+  {
+    immediate: false,
+    onError: (e) => {
+      // throw new Error(e);
+    },
+  }
 );
 
 let content: ArrayBuffer;
 watch(
   [props],
   () => {
-    console.log("props updated", props.file);
     if (content != props.file.content) {
       // Download content if needed
       content = props.file.content;
-      isNote.value = props.file.fileExt == "txt";
+      isNote.value = props.file.fileExt == "" || props.file.fileExt == "txt";
       download(0, content);
     }
   },

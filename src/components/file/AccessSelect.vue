@@ -16,11 +16,15 @@ const emit = defineEmits<{
   (e: "update:modelValue", value: Access): void;
 }>();
 
-watch([props], () => {
-  if (access.value != props.modelValue) {
-    access.value = props.modelValue;
-  }
-});
+watch(
+  [props],
+  () => {
+    if (access.value != props.modelValue) {
+      access.value = props.modelValue;
+    }
+  },
+  { immediate: true }
+);
 
 watch([access], () => {
   emit("update:modelValue", access.value);

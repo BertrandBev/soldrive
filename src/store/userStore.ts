@@ -31,10 +31,11 @@ function createUserStore() {
 
   // Get encryption key
   const fetchEncryptionKey = useAsyncState(
-    async () => {
+    async (createTx = true) => {
       if (!wallet.value || !api.value) return;
       let encryptionKey = sessionStorage.getItem(ENCRYPTION_KEY);
-      if (!encryptionKey) {
+      // Create transaction
+      if (!encryptionKey && createTx) {
         const tx = await api.value.getSignTransaction();
         const signed = await wallet.value.signTransaction(tx);
         const keyBuf = new Uint8Array(signed.signatures[0].signature!);
@@ -42,10 +43,13 @@ function createUserStore() {
         // Persist encryption key until the session ends
         sessionStorage.setItem(ENCRYPTION_KEY, encryptionKey);
       }
-      const keyBuf = bs58.decode(encryptionKey);
-      const derived = await deriveKey(keyBuf);
-      const empty = await deriveKey(Buffer.from(""));
-      return { key: derived, empty };
+      // Derive keys
+      if (encryptionKey) {
+        const keyBuf = bs58.decode(encryptionKey);
+        const derived = await deriveKey(keyBuf);
+        const empty = await deriveKey(Buffer.from(""));
+        return { key: derived, empty };
+      }
     },
     null,
     { immediate: false }
@@ -56,7 +60,7 @@ function createUserStore() {
     async () => {
       if (!wallet.value || !api.value) return;
       const user = await api.value.fetchUser();
-      await fetchEncryptionKey.execute();
+      await fetchEncryptionKey.execute(0, false);
       return user;
     },
     null,

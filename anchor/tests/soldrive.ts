@@ -116,6 +116,7 @@ describe("soldrive", () => {
     assert.equal(file.backend, "solana");
     assert.equal(file.content.toString(), content.toString());
     assert.equal(file.size, content.length);
+    assert.equal(file.maxSize, maxSize);
 
     const user = await fetchUser();
     assert.equal(user.fileCount, 1);
@@ -124,17 +125,30 @@ describe("soldrive", () => {
   });
 
   it("updates file", async () => {
-    const id = 1;
+    let id = 1;
     const parent = 2;
     const name = "my file 2";
-    const content = Buffer.from("some content" + "some content"); // Up to 2x the size
-    await updateFile(id, { parent });
-    await updateFile(id, { name });
-    await updateFile(id, { access: "publicRead" });
-    await updateFile(id, { backend: "arweave" });
-    await updateFile(id, { content: Buffer.from(content) });
+    let content = Buffer.from("some content" + "some content"); // Up to 2x the size
+    id = await updateFile(id, { parent });
+    id = await updateFile(id, { name });
+    id = await updateFile(id, { access: "publicRead" });
+    id = await updateFile(id, { backend: "arweave" });
+    id = await updateFile(id, { content: Buffer.from(content) });
+    assert.equal(id, 1);
 
-    const file = await fetchFile(id, true);
+    let file = await fetchFile(id, true);
+    assert.equal(file.id, id);
+    assert.equal(file.parent, parent);
+    assert.equal(file.access, "publicRead");
+    assert.equal(file.backend, "arweave");
+    assert.equal(file.content.toString(), content.toString());
+    assert.equal(file.size, content.length);
+
+    // Now overflow content
+    content = Buffer.from("some content" + "some contents");
+    id = await updateFile(id, { content: Buffer.from(content) });
+    file = await fetchFile(id, true);
+    assert.equal(id, 2);
     assert.equal(file.id, id);
     assert.equal(file.parent, parent);
     assert.equal(file.access, "publicRead");
@@ -145,7 +159,7 @@ describe("soldrive", () => {
 
   it("update multiple files", async () => {
     // Create a second file
-    const id = 2;
+    const id = 3;
     const parent = 1;
     const name = "second file";
     const content = Buffer.from("some content");
@@ -161,7 +175,7 @@ describe("soldrive", () => {
     } as File);
 
     // Now update parents
-    await updateFiles([1, 2], 2);
+    await updateFiles([2, 3], 2);
 
     // And retrieve all files
     const firstChildren = await fetchChildren(1, true);

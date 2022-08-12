@@ -48,7 +48,7 @@ function setBackend(backend: Backend) {
           It is only recommended for small notes or tiny files
         </p>
         <p class="py-2">
-          Using Arweave is recommended for bigger files or notes
+          Using Arweave is recommended for larger files or notes
         </p>
         <div class="modal-action">
           <div class="btn" @click="infoModalOpen = false">Close</div>

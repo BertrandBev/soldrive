@@ -106,12 +106,13 @@ const route = useRoute();
   <!-- Account creation modal -->
   <div class="modal" :class="{ 'modal-open': createUserModal }">
     <div class="modal-box">
-      <h3 class="font-bold text-lg">Create an account</h3>
+      <h3 class="font-bold text-lg">Welcome to SolDrive!</h3>
       <p class="py-2">
         Create a new account to start storing your notes & files
       </p>
       <div class="modal-action">
-        <div class="btn" @click="createUserFromModal">Yay!</div>
+        <div class="btn" @click="() => (createUserModal = false)">Cancel</div>
+        <div class="btn" @click="createUserFromModal">Create</div>
       </div>
     </div>
   </div>

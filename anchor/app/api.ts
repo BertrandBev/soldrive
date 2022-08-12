@@ -127,13 +127,16 @@ export function getAPI(
     return decoded;
   }
 
-  async function fetchFile(id: number, withContent = false): Promise<File> {
+  async function fetchFile(
+    id: number,
+    withContent = false
+  ): Promise<File | null> {
     const pda = await getFilePda(id);
     // TODO: Remove content fetching here if needed
     const accountInfo = await program.account.file.getAccountInfo(
       pda.publicKey
     );
-    return decodeFileAccount(accountInfo, withContent);
+    return accountInfo ? decodeFileAccount(accountInfo, withContent) : null;
   }
 
   async function fetchFiles(
@@ -222,11 +225,12 @@ export function getAPI(
     id: number,
     maxSize: number,
     file: File,
+    execute: boolean = true,
     signers: web3.Keypair[] = defaultSigners
   ) {
     const userPda = await getUserPda();
     const filePda = await getFilePda(id);
-    await program.methods
+    const builder = program.methods
       .createFile(
         maxSize,
         file.parent,
@@ -243,11 +247,10 @@ export function getAPI(
         authority: authority,
         systemProgram: web3.SystemProgram.programId,
       })
-      .signers(signers)
-      .rpc();
+      .signers(signers);
+    if (execute) await builder.rpc();
+    return builder.transaction();
   }
-
-  // Update
 
   async function updateFolder(
     id: number,
@@ -275,30 +278,54 @@ export function getAPI(
       fileSize?: anchor.BN;
       access?: Access;
       backend?: Backend;
-      content?: ArrayBuffer | Buffer;
+      content?: Buffer;
     },
+    currentFile?: File,
+    user?: User,
     signers: web3.Keypair[] = defaultSigners
-  ) {
+  ): Promise<number> {
     const filePda = await getFilePda(id);
-    const accessEnum = updates.access ? { [updates.access]: {} } : null;
-    const backendEnum = updates.backend ? { [updates.backend]: {} } : null;
-    return program.methods
-      .updateFile(
-        id,
-        updates.parent || null,
-        updates.name || null,
-        updates.fileExt || null,
-        updates.fileSize || null,
-        accessEnum,
-        backendEnum,
-        updates.content || null
-      )
-      .accounts({
-        file: filePda.publicKey,
-        authority: authority,
-      })
-      .signers(signers)
-      .rpc();
+    // Check if the current file has enough space
+    if (!currentFile) currentFile = await fetchFile(id);
+    if (currentFile.maxSize < updates.content?.byteLength || 0) {
+      // File needs re-creation
+      if (!user) user = await fetchUser();
+      const removeTx = await removeFile(id, false, signers);
+      const createTx = await createFile(
+        user.fileId + 1,
+        updates.content!.byteLength,
+        {
+          ...currentFile,
+          ...updates,
+        },
+        false,
+        signers
+      );
+      await program.provider.sendAndConfirm(removeTx.add(createTx), signers);
+      return user.fileId + 1;
+    } else {
+      // Update file
+      const accessEnum = updates.access ? { [updates.access]: {} } : null;
+      const backendEnum = updates.backend ? { [updates.backend]: {} } : null;
+      await program.methods
+        .updateFile(
+          id,
+          updates.parent || null,
+          updates.name || null,
+          updates.fileExt || null,
+          updates.fileSize || null,
+          accessEnum,
+          backendEnum,
+          updates.content || null
+        )
+        .accounts({
+          file: filePda.publicKey,
+          authority: authority,
+        })
+        .signers(signers)
+        .rpc();
+      return id;
+    }
   }
 
   async function updateFiles(
@@ -348,19 +375,21 @@ export function getAPI(
 
   async function removeFile(
     id: number,
+    execute: boolean = true,
     signers: web3.Keypair[] = defaultSigners
   ) {
     const userPda = await getUserPda();
     const filePda = await getFilePda(id);
-    await program.methods
+    const builder = program.methods
       .removeFile(id)
       .accounts({
         user: userPda.publicKey,
         file: filePda.publicKey,
         authority: authority,
       })
-      .signers(signers)
-      .rpc();
+      .signers(signers);
+    if (execute) await builder.rpc();
+    return builder.transaction();
   }
 
   async function getSignTransaction(

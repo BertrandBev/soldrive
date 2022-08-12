@@ -63,7 +63,7 @@ const {
 } = useDropzone({ maxFiles: 1, maxSize: MAX_SIZE, multiple: false });
 
 const props = defineProps<{
-  fileMeta: { name: string; ext: string; size: 0 } | null;
+  fileMeta: { name: string; ext: string; size: number } | null;
 }>();
 
 const file = computed(() => {
@@ -74,7 +74,7 @@ const file = computed(() => {
 const progress = ref(0);
 const processingError = ref(false);
 // File
-const data = ref<ArrayBuffer | null>();
+const data = ref<Buffer | null>();
 const fileMeta = computed(() => {
   if (file.value) {
     const filename = file.value.name || "";
@@ -115,7 +115,6 @@ function processFile() {
     processingError.value = false;
     reader.onload = async function (e: any) {
       const arrayBuffer = e.target.result as ArrayBuffer;
-      data.value = arrayBuffer;
       data.value = await encrypt(arrayBuffer, true);
       progress.value = 0;
     };

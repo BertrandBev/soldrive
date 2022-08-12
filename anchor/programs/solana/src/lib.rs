@@ -113,6 +113,7 @@ pub mod soldrive {
         file.id = user.file_id;
         file.created_at = timestamp();
         file.size = content.len() as u32;
+        file.max_size = max_size;
         file.parent = parent;
         file.name = name;
         file.file_ext = file_ext;
@@ -289,7 +290,7 @@ pub struct RemoveFile<'info> {
         seeds = [b"user".as_ref(), authority.key.as_ref()],
         bump)]
     pub user: Account<'info, User>,
-
+    #[account(mut)]
     pub authority: Signer<'info>,
 }
 
@@ -367,6 +368,7 @@ pub struct File {
     pub access: Access,
     pub backend: Backend,
     pub size: u32,
+    pub max_size: u32,
     // pub content: String, omitted for deserialization purposes
 }
 
@@ -391,6 +393,7 @@ impl File {
         + std::mem::size_of::<Access>()   // access
         + std::mem::size_of::<Backend>()  // backend
         + 4                               // size
+        + 4                               // max_size
         + File::PADDING                   // padding
         + byte_count as usize // content
     }

@@ -66,6 +66,7 @@ const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
         // Populate fields
         data.value.loaded = true;
         data.value.file = res;
+        console.log("file", res);
       }
     }
   },
@@ -109,17 +110,10 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
     if (isNew.value) {
       // Create file
       const id = user.value.fileId + 1;
-      console.log("file", {
-        ...file.value,
-        content: payload.content,
-      });
       await api.value?.createFile(id, payload.content.byteLength, {
         ...file.value,
         content: payload.content,
       } as File);
-
-      // Bump id
-      await fetchUser.execute();
       toast.success("File successfully created!");
     } else {
       //
@@ -139,7 +133,9 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
       });
       toast.success("File successfully updated!");
     }
-    // Nav back
+    // Bump id
+    await fetchUser.execute();
+    // Nav back (prevent going forward if id got bumped)
     router.go(-1);
   },
   null,
