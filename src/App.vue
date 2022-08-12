@@ -21,7 +21,6 @@ function onMenuClicked() {
           <router-view />
         </div>
       </div>
-      <!-- <Notification></Notification> -->
     </div>
     <Drawer />
   </div>

@@ -11,13 +11,15 @@ import { useRouter } from "vue-router";
 // File icons
 import FileTile from "./widgets/FileTile.vue";
 import FolderTile from "./widgets/FolderTile.vue";
-import EditFolderModal from "./EditFolderModal.vue";
+import EditFolderModal from "./widgets/EditFolderModal.vue";
 import PathBar from "./widgets/PathBar.vue";
+import RemoveModal from "./widgets/RemoveModal.vue";
 
 const { api, wallet } = useChainApi();
 const { isLoggedIn } = useUserStore();
 const router = useRouter();
 const editFolderModal = ref<null | InstanceType<typeof EditFolderModal>>(null);
+const removeModal = ref<null | InstanceType<typeof RemoveModal>>(null);
 
 const props = defineProps<{
   path: string[];
@@ -67,21 +69,23 @@ function editFolder(folder?: Folder) {
 }
 
 function removeFolder(folder: Folder) {
-  // Confirmation modal!
+  removeModal.value?.openForFolder(folder);
 }
 
 function editFile(file?: File) {
-  // editFileModal.value?.open(parent, file);
   const folder = folderId(props.path || []);
   router.push({ path: "/file", query: { folder, id: file?.id } });
 }
 
 function removeFile(file: File) {
-  // Confirmation modal!
+  removeModal.value?.openForFile(file);
 }
 
 function onFolderUpdated() {
-  console.log("on folder updated!");
+  fetchChildren.execute();
+}
+
+function onRemoved() {
   fetchChildren.execute();
 }
 
@@ -126,6 +130,7 @@ defineExpose({ editFolder, removeFolder });
       ref="editFolderModal"
       :onFolderUpdated="onFolderUpdated"
     ></EditFolderModal>
-    <!-- Remove folder modal -->
+    <!-- Remove file & folder modal -->
+    <RemoveModal ref="removeModal" :onRemoved="onRemoved"></RemoveModal>
   </div>
 </template>

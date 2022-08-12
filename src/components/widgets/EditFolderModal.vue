@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { ref, watchEffect, computed, onMounted } from "vue";
-import { PencilIcon, CheckIcon } from "@heroicons/vue/outline";
-import { useChainApi, FileType, Access, Folder } from "../api/chain-api";
-import { useAsyncState, useThrottleFn } from "@vueuse/core";
+import { ref, watchEffect, computed } from "vue";
+import { useChainApi, Access, Folder } from "../../api/chain-api";
+import { useAsyncState } from "@vueuse/core";
 import * as anchor from "@project-serum/anchor";
 import { useToast } from "vue-toastification";
 import web3 = anchor.web3;
-import { useUserStore } from "../store/userStore";
+import { useUserStore } from "../../store/userStore";
 
 const { api, wallet, connection } = useChainApi();
 const toast = useToast();

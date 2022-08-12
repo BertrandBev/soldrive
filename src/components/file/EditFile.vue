@@ -33,19 +33,23 @@ const isNew = computed(() => {
   return fileId.value == undefined;
 });
 
-// File data
-const data = ref({
-  loaded: false,
-  file: {
+function genFile() {
+  return {
     name: "",
     parent: 0,
-    // // Default
     access: "private" as Access,
     fileExt: "",
     fileSize: new anchor.BN(0),
     backend: "solana" as Backend,
     content: new ArrayBuffer(0),
-  } as File,
+  } as File;
+}
+
+// File data
+const data = ref({
+  loaded: false,
+  file: genFile(),
+  originalFile: genFile(),
 });
 
 // Shortcut
@@ -60,14 +64,12 @@ const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
     } else {
       // Existing file
       const res = await api.value?.fetchFile(fileId.value!, true);
-      if (!res) {
-        toast.error(`Note ${fileId.value} not found`);
-      } else {
-        // Populate fields
-        data.value.loaded = true;
-        data.value.file = res;
-        console.log("file", res);
-      }
+      if (!res) throw new Error(`Note ${fileId.value} not found`);
+      // Populate fields
+      data.value.loaded = true;
+      data.value.originalFile = { ...res };
+      data.value.file = res;
+      console.log("loaded file", res);
     }
   },
   null,
@@ -104,23 +106,23 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
     // Retrieve content
     // Don't repace file.content in here to prevent reactive download from Content
     const payload = await content.value!.upload();
-    file.value.fileExt = payload.fileExt;
-    file.value.fileSize = new anchor.BN(payload.fileSize);
+    if (payload) {
+      file.value.fileExt = payload.fileExt;
+      file.value.fileSize = new anchor.BN(payload.fileSize);
+    }
+    console.log("PAYLOAD", payload);
 
     if (isNew.value) {
       // Create file
       const id = user.value.fileId + 1;
-      await api.value?.createFile(id, payload.content.byteLength, {
+      await api.value?.createFile(id, payload!.content.byteLength, {
         ...file.value,
-        content: payload.content,
+        content: payload!.content,
       } as File);
       toast.success("File successfully created!");
     } else {
       //
-      if (!data.value.loaded) {
-        toast.error("File not loaded");
-        return;
-      }
+      if (!data.value.loaded) throw new Error("File not loaded");
       // Update file
       await api.value?.updateFile(fileId.value!, {
         parent: file.value.parent,
@@ -129,7 +131,7 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
         fileSize: file.value.fileSize,
         access: file.value.access,
         backend: file.value.backend,
-        content: payload.content,
+        content: payload?.content,
       });
       toast.success("File successfully updated!");
     }
@@ -140,8 +142,8 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
   },
   null,
   {
-    onError: (e) => {
-      toast.error((e as Error).message);
+    onError: (e: any) => {
+      toast.error((e.value ? (e.value as Error) : (e as Error)).message);
     },
     immediate: false,
   }
@@ -155,6 +157,18 @@ function navBack() {
   // Warning dialog
   router.go(-1);
 }
+
+const updated = computed(() => {
+  console.log(
+    "updated",
+    content.value?.updated,
+    data.value.originalFile.name != data.value.file.name
+  );
+  return (
+    content.value?.updated ||
+    data.value.originalFile.name != data.value.file.name
+  );
+});
 </script>
 
 <template>
@@ -189,7 +203,8 @@ function navBack() {
       <!--  -->
       <Content
         ref="content"
-        :file="file"
+        :file="data.file"
+        :original-file="data.originalFile"
         :is-new="isNew"
         :set-file-name="setFilename"
       ></Content>
@@ -202,7 +217,7 @@ function navBack() {
         <!-- Save btn -->
         <div
           class="btn btn-ghost"
-          :class="{ loading: fileSaving }"
+          :class="{ loading: fileSaving, 'btn-disabled': !updated }"
           @click="() => saveFile()"
         >
           Save
@@ -212,3 +227,9 @@ function navBack() {
     </div>
   </div>
 </template>
+
+<style>
+.btn-disabled {
+  background-color: transparent;
+}
+</style>

@@ -9,6 +9,7 @@ import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import DepositModal from "../widgets/DepositModal.vue";
 import Loader from "../utils/Loader.vue";
 import { useAsyncState } from "@vueuse/core";
+import { XIcon } from "@heroicons/vue/outline";
 
 const { user, fetchUser, encrypt, decrypt } = useUserStore();
 const {
@@ -22,6 +23,7 @@ const {
 const toast = useToast();
 
 const props = defineProps<{
+  originalFile: File;
   file: File;
   isNew: boolean;
   setFileName: (name: string) => void;
@@ -39,18 +41,90 @@ const dropzone = ref<null | InstanceType<typeof Dropzone>>(null);
 const depositModal = ref<null | InstanceType<typeof DepositModal>>(null);
 const emptyContent = ref(false);
 const note = ref("");
-const encryptedNote = ref<Buffer | null>();
+const noteBuf = ref(new ArrayBuffer(0));
 
 const wordCountStr = computed(() => {
   return `${note.value.length} characters`;
 });
 
+// Data downloader
+const {
+  state: downloadedData,
+  execute: download,
+  isLoading: downloading,
+  error: downloadError,
+} = useAsyncState(
+  async (forceDownload = false) => {
+    const file = props.originalFile;
+    // Exit for empty content
+    if (file.content.byteLength == 0) return;
+    // Decrypt filecontent
+    const encrypted = file.access == "private";
+    const contentBuf = await decrypt(file.content, encrypted);
+    // Download file if needed
+    let buf: ArrayBuffer | null = null;
+    if (isSolana.value) {
+      // Solana backend
+      buf = contentBuf;
+    } else {
+      // Arweave backend, unpack
+      const contentStr = decoder.decode(contentBuf);
+      // Unpack metadata
+      const meta = contentStr.split("\n");
+      const id = meta[0];
+      // Download note
+      if (isNote.value || forceDownload) {
+        // Unpack note
+        const buffer = await downloadFile(id);
+        buf = await decrypt(buffer, encrypted);
+      }
+    }
+    // Unpack note
+    if (isNote.value) {
+      note.value = decoder.decode(buf!);
+    }
+    // Return buffer
+    return buf;
+  },
+  null,
+  {
+    immediate: false,
+    onError: (e) => {
+      console.error(e);
+    },
+    throwError: true,
+  }
+);
+
+const noteUpdated = computed(() => {
+  if (!isNote.value) return false;
+  if (!downloadedData.value) return false;
+  return note.value != decoder.decode(downloadedData.value);
+});
+
+// watch file to trigger
+let originalFilePrev: File | null;
+watch(
+  [props],
+  async () => {
+    if (originalFilePrev != props.originalFile) {
+      originalFilePrev = props.originalFile;
+      isNote.value = props.file.fileExt == "" || props.file.fileExt == "txt";
+      // DOWNLOAD
+      console.log("Download...");
+      await download();
+    }
+  },
+  { immediate: true }
+);
+
 // Uniform data accessors
 const data = computed(() => {
-  return (
-    (isNote.value ? encryptedNote.value : dropzone.value?.data) ||
-    Buffer.alloc(0)
-  );
+  let buffer: ArrayBuffer | null = null;
+  if (isNote.value) buffer = noteBuf.value;
+  else if (dropzone.value?.data) buffer = dropzone.value.data;
+  else if (downloadedData.value) buffer = downloadedData.value;
+  return buffer || new ArrayBuffer(0);
 });
 
 const fileSize = computed(() => {
@@ -83,109 +157,82 @@ const noteRentCostStr = computed(() => {
   else return `Cost ${solVal.toFixed(3)} SOL`;
 });
 
-watch([note, isEncrypted], async () => {
+watch([note], async () => {
   emptyContent.value = note.value.length == 0;
   const msg = note.value;
-  try {
-    const encoded = encoder.encode(msg);
-    const buf = await encrypt(encoded, isEncrypted.value);
-    const decrypted = await decrypt(buf, isEncrypted.value);
-    const decoded = decoder.decode(decrypted);
-    if (decoded != msg) throw new Error("Encryption error");
-    encryptedNote.value = buf;
-    // props.setContent(buf);
-  } catch (e) {
-    console.error("Encryption error:", (e as Error).message);
-    toast.error((e as Error).message);
-  }
+  noteBuf.value = encoder.encode(msg);
 });
 
-async function upload() {
-  // Validate
-  if (fileSize.value == 0) {
-    throw new Error(isNote.value ? "Empty note" : "Select a valid file");
-  }
-  // TODO: cache meta
-  let content: Buffer;
-  // Upload file content if needed
-  if (!isSolana.value) {
-    // Arweave backend, get balance
-    const balance = await getBalance();
-    const cost = await getCost(fileSize.value);
-    if (balance.comparedTo(cost) <= 0)
-      await depositModal.value?.open(fileSize.value);
-    // Upload file
-    const id = await uploadFile(data.value);
-    // Pack file metadata
-    const contentStr = [id].join("\n");
-    const contentBuf = encoder.encode(contentStr);
-    content = await encrypt(contentBuf, isEncrypted.value);
-  } else {
-    // Solana backend
-    content = data.value;
-  }
-  // Return content
-  return {
-    content,
-    fileSize: fileSize.value,
-    fileExt: fileExt.value,
-  };
-}
+const updated = computed(() => {
+  return (
+    props.originalFile.access != props.file.access ||
+    props.originalFile.backend != props.file.backend ||
+    (!isNote.value && dropzone.value!.data != null) ||
+    (isNote.value && noteUpdated.value)
+  );
+});
 
 const {
-  execute: download,
-  isLoading: downloading,
-  error: downloadError,
+  execute: upload,
+  isLoading: uploading,
+  error: uploadError,
 } = useAsyncState(
-  async (content: ArrayBuffer) => {
-    // Exit for empty content
-    if (content.byteLength == 0) return;
-    // Decrypt content
-    const contentBuf = await decrypt(content, isEncrypted.value);
-    // Download file if needed
-    let data: ArrayBuffer;
-    if (isSolana.value) {
-      // Solana backend
-      data = contentBuf;
+  async () => {
+    let content: Buffer | null = null;
+
+    // Conditions for content update
+    const updateContent = updated.value || props.isNew;
+    if (!updateContent) {
+      // No need to do anything here
+      return null;
+    }
+
+    // Download content if needed
+    if (!data.value.byteLength) {
+      await download(0, true);
+    }
+
+    // Validate
+    if (fileSize.value == 0) {
+      throw new Error(isNote.value ? "Empty note" : "Select a valid file");
+    }
+
+    // Encrypt
+    const encrypted = await encrypt(data.value, isEncrypted.value);
+    const size = encrypted.byteLength;
+
+    // Set content
+    if (!isSolana.value) {
+      // Arweave backend, get balance
+      const balance = await getBalance();
+      const cost = await getCost(size);
+      if (balance.comparedTo(cost) <= 0) await depositModal.value?.open(size);
+      // Upload file
+      const id = await uploadFile(encrypted);
+      // Pack file metadata
+      const contentStr = [id].join("\n");
+      const contentBuf = encoder.encode(contentStr);
+      content = await encrypt(contentBuf, isEncrypted.value);
     } else {
-      // Arweave backend, unpack
-      const contentStr = decoder.decode(contentBuf);
-      // Unpack metadata
-      const meta = contentStr.split("\n");
-      const id = meta[0];
-      // Download note
-      if (isNote.value) {
-        // Unpack note
-        const buffer = await downloadFile(id);
-        data = await decrypt(buffer, isEncrypted.value);
-      }
+      // Solana backend
+      content = encrypted;
     }
-    // Unpack note
-    if (isNote.value) {
-      note.value = decoder.decode(data!);
-    }
+
+    // Return content
+    return {
+      content,
+      fileSize: size,
+      fileExt: fileExt.value,
+    };
   },
   null,
   {
     immediate: false,
     onError: (e) => {
-      // throw new Error(e);
+      console.error(e);
     },
+    throwError: true,
   }
-);
-
-let content: ArrayBuffer;
-watch(
-  [props],
-  () => {
-    if (content != props.file.content) {
-      // Download content if needed
-      content = props.file.content;
-      isNote.value = props.file.fileExt == "" || props.file.fileExt == "txt";
-      download(0, content);
-    }
-  },
-  { immediate: true }
 );
 
 const fileMeta = computed(() => ({
@@ -194,7 +241,7 @@ const fileMeta = computed(() => ({
   size: props.file.fileSize.toNumber(),
 }));
 
-defineExpose({ upload });
+defineExpose({ upload, updated });
 </script>
 
 <template>
@@ -219,12 +266,33 @@ defineExpose({ upload });
     </div>
     <!-- Loader -->
     <div
-      v-if="downloading || downloadError"
+      v-if="downloading || downloadError || uploading || uploadError"
       class="h-[168px] w-full flex justify-center items-center"
     >
-      <div v-if="downloadError">File loading error</div>
-      <Loader v-else></Loader>
+      <div
+        v-if="downloadError"
+        class="btn btn-ghost text-red-300 gap-2"
+        @click="downloadError = null"
+      >
+        File loading error
+        <XIcon class="w-5 h-5"></XIcon>
+      </div>
+      <div
+        v-else-if="uploadError"
+        class="btn btn-ghost text-red-300 gap-2"
+        @click="uploadError = null"
+      >
+        File upload error
+        <XIcon class="w-5 h-5"></XIcon>
+      </div>
+      <template v-else>
+        <Loader></Loader>
+        <div class="ml-4">
+          {{ uploading ? "uploading data" : "downloading data" }}
+        </div>
+      </template>
     </div>
+
     <!-- File dropzone -->
     <Dropzone
       v-else-if="!isNote"

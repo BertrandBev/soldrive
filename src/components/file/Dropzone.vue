@@ -74,7 +74,7 @@ const file = computed(() => {
 const progress = ref(0);
 const processingError = ref(false);
 // File
-const data = ref<Buffer | null>();
+const data = ref<ArrayBuffer | null>();
 const fileMeta = computed(() => {
   if (file.value) {
     const filename = file.value.name || "";
@@ -115,7 +115,7 @@ function processFile() {
     processingError.value = false;
     reader.onload = async function (e: any) {
       const arrayBuffer = e.target.result as ArrayBuffer;
-      data.value = await encrypt(arrayBuffer, true);
+      data.value = arrayBuffer;
       progress.value = 0;
     };
     reader.onerror = function (e: any) {
@@ -154,8 +154,8 @@ watch([file], () => processFile());
 
 <template>
   <div>
-    <div v-bind="getRootProps()">
-      <input v-bind="getInputProps()" />
+    <div v-bind="(getRootProps() as any)">
+      <input v-bind="(getInputProps() as any)" />
       <div
         class="drop-zone"
         :class="{

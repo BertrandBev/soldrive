@@ -24,10 +24,19 @@ const walletOptions = {
   autoConnect: true,
 };
 
-
 const toastOptions = {
   timeout: 5000,
   position: POSITION.BOTTOM_CENTER,
+  maxToasts: 2,
+  pauseOnHover: false,
+  pauseOnFocusLoss: false,
+  filterBeforeCreate: (toast, list) => {
+    const msg = toast.content.toString();
+    const some = list.some((sub) => {
+      return sub.content.toString() == msg;
+    });
+    return some ? false : toast;
+  },
 } as PluginOptions;
 
 const app = createApp(App);

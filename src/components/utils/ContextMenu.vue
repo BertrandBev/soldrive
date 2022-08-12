@@ -25,7 +25,6 @@ const container = ref(null as Element | null);
 function referenceObject(evt: MouseEvent): ReferenceObject {
   const left = evt.clientX;
   const top = evt.clientY;
-  console.log(top, left);
   const clientWidth = 1;
   const clientHeight = 1;
   const right = left + clientWidth;

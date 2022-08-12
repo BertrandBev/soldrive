@@ -12,7 +12,7 @@
     "@bundlr-network/client": "^0.7.15",
     "@project-serum/anchor": "^0.25.0",
     "@solana/wallet-adapter-wallets": "^0.16.8",
-    "@vueuse/core": "^8.9.4",
+    "@vueuse/core": "^9.1.0",
     "bs58": "^5.0.0",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.0",
