@@ -69,13 +69,13 @@ defineExpose({ open, close });
 <style scoped>
 .context-menu {
   position: fixed;
-  z-index: 999;
+  z-index: 250;
   overflow: hidden;
 }
 
 .overlay {
   position: fixed;
-  z-index: 998;
+  z-index: 200;
   width: 100vw;
   height: 100vh;
   background-color: #00000055;

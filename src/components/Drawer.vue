@@ -10,7 +10,7 @@ const menuItems = [
 </script>
 
 <template>
-  <div class="drawer-side lg:border-r lg:border-slate-800">
+  <div class="drawer-side lg:border-r lg:border-slate-800 lg:z-[-1]">
     <label for="drawer" class="drawer-overlay"></label>
     <ul class="menu p-4 overflow-y-auto w-60 bg-base-100 text-base-content">
       <!-- Sidebar content here -->

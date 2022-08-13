@@ -17,7 +17,7 @@ function onMenuClicked() {
     <div class="drawer-content flex flex-col h-full">
       <NavBar :onMenuClicked="onMenuClicked" />
       <div class="w-full h-full">
-        <div class="max-w-3xl" style="margin: auto">
+        <div class="max-w-5xl" style="margin: auto">
           <router-view />
         </div>
       </div>

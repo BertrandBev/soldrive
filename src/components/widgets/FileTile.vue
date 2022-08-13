@@ -11,6 +11,7 @@ import ContextMenu from "../utils/ContextMenu.vue";
 import textLogo from "../../assets/files/word.png";
 import pdfLogo from "../../assets/files/pdf.png";
 import videoLogo from "../../assets/files/video.png";
+import imageLogo from "../../assets/files/image.png";
 import wordLogo from "../../assets/files/word.png";
 import mp3Logo from "../../assets/files/mp3.png";
 import zipLogo from "../../assets/files/zip.png";
@@ -26,17 +27,40 @@ const props = defineProps<{
 
 const menu = ref<null | InstanceType<typeof ContextMenu>>(null);
 
-function fileIcon() {
-  switch (props.file.fileExt) {
-    case "pdf":
-      return pdfLogo;
-    case "mov":
-    case "avi":
-      return videoLogo;
+const iconSets = [
+  {
+    logo: pdfLogo,
+    ext: new Set(["pdf"]),
+  },
+  {
+    logo: videoLogo,
+    ext: new Set([
+      "mov",
+      "avi",
+      "mp4",
+      "wmv",
+      "avi",
+      "flv",
+      "f4v",
+      "mkv",
+      "webm",
+    ]),
+  },
+  {
+    logo: imageLogo,
+    ext: new Set(["jpeg", "jpg", "png", "gif", "tiff", "bmp", "tiff", "raw"]),
+  },
+];
+
+const fileIcon = computed(() => {
+  const fileExt = props.file.fileExt;
+  for (let k = 0; k < iconSets.length; k++) {
+    const { logo, ext } = iconSets[k];
+    if (ext.has(fileExt)) return logo;
   }
   // Default file
   return textLogo;
-}
+});
 
 function handler(clickData: MouseEvent) {
   if (menu.value) {
@@ -59,7 +83,7 @@ function onClick() {
     >
       <!-- Icon -->
       <div class="flex-1 flex items-center">
-        <img :src="fileIcon()" class="w-[72px] h-[72px]" />
+        <img :src="fileIcon" class="w-[72px] h-[72px]" />
       </div>
       <!-- Name -->
       <div class="flex p-2 items-center">

@@ -14,6 +14,7 @@ import FolderTile from "./widgets/FolderTile.vue";
 import EditFolderModal from "./widgets/EditFolderModal.vue";
 import PathBar from "./widgets/PathBar.vue";
 import RemoveModal from "./widgets/RemoveModal.vue";
+import Viewer from "./viewer/Viewer.vue";
 
 const { api, wallet } = useChainApi();
 const { isLoggedIn } = useUserStore();
@@ -132,5 +133,7 @@ defineExpose({ editFolder, removeFolder });
     ></EditFolderModal>
     <!-- Remove file & folder modal -->
     <RemoveModal ref="removeModal" :onRemoved="onRemoved"></RemoveModal>
+    <!-- File viewer -->
+    <Viewer></Viewer>
   </div>
 </template>
