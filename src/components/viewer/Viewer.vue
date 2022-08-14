@@ -10,25 +10,64 @@ import {
   ArrowRightIcon,
 } from "@heroicons/vue/outline";
 import { useMagicKeys } from "@vueuse/core";
-import { watch } from "vue";
+import { ref, watch, computed } from "vue";
+import { useAsyncState } from "@vueuse/core";
 import ImageViewer from "./ImageViewer.vue";
 import VideoViewer from "./VideoViewer.vue";
+import { File } from "../../api/chain-api";
+import { useFileStore } from "../../store/fileStore";
 const { left, right } = useMagicKeys();
+const { downloadFile, blobToBase64 } = useFileStore();
+
+const opened = ref(false);
+const currentFileIdx = ref(0);
+const files = ref<File[]>([]);
+const file = computed(() => {
+  return currentFileIdx.value < files.value.length
+    ? files.value[currentFileIdx.value]
+    : null;
+});
+const loaders = ref([] as {}[]);
 
 watch([left], () => left.value && leftPressed());
 watch([right], () => right.value && rightPressed());
 
 function leftPressed() {
-  console.log("left");
+  currentFileIdx.value = currentFileIdx.value - 1;
+  if (currentFileIdx.value < 0) currentFileIdx.value = files.value.length - 1;
 }
 
 function rightPressed() {
-  console.log("right");
+  currentFileIdx.value = currentFileIdx.value + 1;
+  if (currentFileIdx.value >= files.value.length) currentFileIdx.value = 0;
+}
+
+function open(_files: File[], currentFile: File) {
+  files.value = _files;
+  // Instanciate loaders
+  loaders.value = _files.map((file) => {
+    return useAsyncState(
+      async () => {
+        const buf = await downloadFile(file, true);
+      },
+      null,
+      { immediate: false }
+    );
+  });
+  //
+  currentFileIdx.value = 0;
+  for (let k = 0; k < _files.length; k++) {
+    if (_files[k] == currentFile) {
+      currentFileIdx.value = k;
+      break;
+    }
+  }
 }
 </script>
 
 <template>
   <div
+    v-if="opened"
     class="w-screen h-screen bg-[#000000cc] fixed top-0 left-0 z-[100] flex flex-col"
   >
     <!-- Toolbar -->
@@ -60,8 +99,8 @@ function rightPressed() {
     <!-- PDF -->
     <!-- <PdfViewer></PdfViewer> -->
     <!-- Image -->
-    <!-- <ImageViewer></ImageViewer> -->
+    <ImageViewer></ImageViewer>
     <!-- Audio/Video -->
-    <VideoViewer></VideoViewer>
+    <!-- <VideoViewer></VideoViewer> -->
   </div>
 </template>

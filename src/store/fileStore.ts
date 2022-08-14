@@ -3,11 +3,13 @@ import {
   useChainApi,
   useAnchorWallet,
   useAnchorProvider,
+  File,
 } from "../api/chain-api";
 import { createGlobalState } from "@vueuse/core";
 import { watch, ref } from "vue";
 import { Connection, Transaction } from "@solana/web3.js";
 import BigNumber from "bignumber.js";
+import { useUserStore } from "./userStore";
 const FORCE_ANCHOR_WALLET = true;
 import axios from "axios";
 
@@ -113,7 +115,6 @@ function createFileStore() {
     if (balance.isLessThan(cost)) throw new Error("Insufficient funds");
 
     // Upload file
-    // application/octet-stream
     const tags = [{ name: "Content-Type", value: "application/octet-stream" }];
     const tx = bundlr.createTransaction(new Uint8Array(data), { tags });
     // Sign and send transaction
@@ -123,22 +124,72 @@ function createFileStore() {
     return result.data.id;
   }
 
-  async function downloadFile(id: string) {
+  async function downloadArweave(id: string) {
     const url = `https://arweave.net/${id}`;
     const resp = await axios.get(url, { responseType: "blob" });
-    if (resp.data instanceof Blob) return resp.data.arrayBuffer();
-    else throw new Error("Invalid file id");
+    if (resp.data instanceof Blob) return resp.data;
+    else throw new Error("Download failed");
+  }
+
+  async function fileToBase64Url() {
+    
+  }
+  
+  async function blobToBase64(blob: Blob) {
+    const reader = new FileReader();
+    return new Promise<string>((resolve, reject) => {
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = (e) => reject(e);
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function arrayBufferToBase64(arrayBuffer: ArrayBuffer) {
+    const blob = new Blob([arrayBuffer]);
+    return blobToBase64(blob);
+  }
+
+
+  async function downloadFile(
+    file: File,
+    downloadLinks: boolean = true
+  ): Promise<ArrayBuffer> {
+    const { decrypt } = useUserStore();
+    // Exit for empty content
+    if (file.content.byteLength == 0) return new ArrayBuffer(0);
+    // Decrypt filecontent
+    const encrypted = file.access == "private";
+    const contentBuf = await decrypt(file.content, encrypted);
+    // Download file if needed
+    if (file.backend == "solana") {
+      // Solana backend
+      return contentBuf;
+    } else if (downloadLinks) {
+      // Arweave backend, unpack
+      const decoder = new TextDecoder();
+      const contentStr = decoder.decode(contentBuf);
+      // Unpack metadata
+      const meta = contentStr.split("\n");
+      const id = meta[0];
+      // Unpack note
+      const blob = await downloadArweave(id);
+      return await decrypt(await blob.arrayBuffer(), encrypted);
+    } else {
+      return new ArrayBuffer(0);
+    }
   }
 
   return {
+    mbCostArweave,
+    mbCostSolana,
     getBalance,
     getCost,
     deposit,
     withdrawBalance,
     uploadFile,
+    downloadArweave,
+    blobToBase64,
     downloadFile,
-    mbCostArweave,
-    mbCostSolana,
   };
 }
 

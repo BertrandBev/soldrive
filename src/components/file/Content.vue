@@ -55,30 +55,9 @@ const {
   error: downloadError,
 } = useAsyncState(
   async (forceDownload = false) => {
-    const file = props.originalFile;
-    // Exit for empty content
-    if (file.content.byteLength == 0) return;
-    // Decrypt filecontent
-    const encrypted = file.access == "private";
-    const contentBuf = await decrypt(file.content, encrypted);
-    // Download file if needed
-    let buf: ArrayBuffer | null = null;
-    if (isSolana.value) {
-      // Solana backend
-      buf = contentBuf;
-    } else {
-      // Arweave backend, unpack
-      const contentStr = decoder.decode(contentBuf);
-      // Unpack metadata
-      const meta = contentStr.split("\n");
-      const id = meta[0];
-      // Download note
-      if (isNote.value || forceDownload) {
-        // Unpack note
-        const buffer = await downloadFile(id);
-        buf = await decrypt(buffer, encrypted);
-      }
-    }
+    // Force download for notes
+    forceDownload = forceDownload || props.originalFile.fileExt == "txt";
+    const buf = await downloadFile(props.originalFile, forceDownload);
     // Unpack note
     if (isNote.value) {
       note.value = decoder.decode(buf!);
