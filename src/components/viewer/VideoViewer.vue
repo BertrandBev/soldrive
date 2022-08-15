@@ -1,43 +1,45 @@
 <script setup lang="ts">
 // @ts-ignore
 import VuePlyr from "vue-plyr";
-import link from "../../assets/Rochelle_2.mp4";
+import link from "../../assets/ZZ Top - Gimme All Your Lovin (Official Music Video).mp3";
 import "vue-plyr/dist/vue-plyr.css";
 import { watch, computed } from "vue";
 import { fileType } from "../../store/fileTypes";
+import { File } from "../../api/chain-api";
 
 const props = defineProps<{
-  ext?: string;
+  file?: File | null;
   dataUri?: string | null;
 }>();
 
-const type = computed(() => fileType(props.ext));
+const fileName = computed(() => props.file?.name);
+const type = computed(() => fileType(props.file?.fileExt));
 const isVideo = computed(() => type.value == "video");
+const isAudio = computed(() => type.value == "audio");
 
 const url = computed(() => {
-  console.log("uri", url);
   return props.dataUri;
-  // props.dataUri?.replace("data:application/octet-stream", "data:video/mp4") ||
-  // ""
 });
-// TODO!: test data uri for other video types
 </script>
 
 <template>
-  <div class="w-full h-full flex items-center justify-center">
+  <div class="w-full h-full flex flex-col items-center justify-center">
     <!-- video element -->
-    <vue-plyr>
-      <video v-if="url" controls crossorigin="true" playsinline>
+    <vue-plyr v-if="isVideo && url">
+      <video controls crossorigin="true" playsinline>
         <source :src="url" />
-        <!-- <track
-          default
-          kind="captions"
-          label="English captions"
-          src="/path/to/english.vtt"
-          srclang="en"
-        /> -->
-        -->
       </video>
     </vue-plyr>
+    <!-- Audio element -->
+    <template v-if="isAudio && url">
+      <div>{{ fileName }}</div>
+      <div class="max-h-[128px] mt-4">
+        <vue-plyr>
+          <audio controls crossorigin="true" playsinline>
+            <source :src="url" />
+          </audio>
+        </vue-plyr>
+      </div>
+    </template>
   </div>
 </template>

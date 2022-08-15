@@ -23,7 +23,7 @@ import {
 } from "../../store/fileTypes";
 import Loader from "../utils/Loader.vue";
 const { left, right } = useMagicKeys();
-const { downloadFile, arrayBufferToBase64 } = useFileStore();
+const { downloadFile, arrayBufferToBase64, clientDownload } = useFileStore();
 
 // type Loader = ReturnType<typeof useAsyncState<string | null, true>>;
 const props = defineProps<{
@@ -79,13 +79,12 @@ watch(
 
 function leftPressed() {
   fileIdx.value = fileIdx.value - 1;
-  if (fileIdx.value < 0) fileIdx.value = 0; //  props.files.length - 1;
+  if (fileIdx.value < 0) fileIdx.value = props.files.length - 1;
 }
 
 function rightPressed() {
   fileIdx.value = fileIdx.value + 1;
-  if (fileIdx.value >= props.files.length)
-    fileIdx.value = props.files.length - 1;
+  if (fileIdx.value >= props.files.length) fileIdx.value = 0;
 }
 
 watch(
@@ -110,6 +109,12 @@ watch(
   },
   { immediate: true }
 );
+
+function download() {
+  if (!file.value || !state.value) return; // toast
+  console.log("downlaod!");
+  clientDownload(file.value?.name + "." + file.value?.fileExt, state.value!);
+}
 </script>
 
 <template>
@@ -130,17 +135,17 @@ watch(
       <!-- Spacer -->
       <div class="flex-1"></div>
       <!-- Navigation -->
-      <button class="btn btn-circle btn-ghost" @click="() => leftPressed()">
+      <button class="btn btn-circle btn-ghost" @click="leftPressed">
         <ArrowLeftIcon class="w-5 h-5" />
       </button>
       <div class="text-md font-mono">
         {{ fileIdx + 1 }}/{{ props.files.length }}
       </div>
-      <button class="btn btn-circle btn-ghost" @click="() => rightPressed()">
+      <button class="btn btn-circle btn-ghost" @click="rightPressed">
         <ArrowRightIcon class="w-5 h-5" />
       </button>
       <!-- Download -->
-      <button class="btn btn-circle btn-ghost" @click="() => leftPressed()">
+      <button class="btn btn-circle btn-ghost" @click="download">
         <DownloadIcon class="w-5 h-5" />
       </button>
       <!-- Menu -->
@@ -160,7 +165,11 @@ watch(
     <template v-else>
       <ImageViewer v-if="fileType == 'image'" :dataUri="state"></ImageViewer>
       <PdfViewer v-if="fileType == 'pdf'" :dataUri="state"></PdfViewer>
-      <VideoViewer v-if="fileType == 'video'" :dataUri="state"></VideoViewer>
+      <VideoViewer
+        v-if="fileType == 'video' || fileType == 'audio'"
+        :file="file"
+        :dataUri="state"
+      ></VideoViewer>
     </template>
   </div>
 </template>
