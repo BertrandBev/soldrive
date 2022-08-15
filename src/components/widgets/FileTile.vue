@@ -6,18 +6,13 @@ import { useUserStore } from "../../store/userStore";
 import { ref, watchEffect, onMounted, computed } from "vue";
 import Loader from "../utils/Loader.vue";
 import ContextMenu from "../utils/ContextMenu.vue";
-
-// File icons
-import textLogo from "../../assets/files/word.png";
-import pdfLogo from "../../assets/files/pdf.png";
-import videoLogo from "../../assets/files/video.png";
-import imageLogo from "../../assets/files/image.png";
-import wordLogo from "../../assets/files/word.png";
-import mp3Logo from "../../assets/files/mp3.png";
-import zipLogo from "../../assets/files/zip.png";
+import { useRouter, useRoute } from "vue-router";
+import { fileIcon as _fileIcon } from "../../store/fileTypes";
 
 const { api, wallet } = useChainApi();
 const { isLoggedIn } = useUserStore();
+const router = useRouter();
+const route = useRoute();
 
 const props = defineProps<{
   file: File;
@@ -27,39 +22,9 @@ const props = defineProps<{
 
 const menu = ref<null | InstanceType<typeof ContextMenu>>(null);
 
-const iconSets = [
-  {
-    logo: pdfLogo,
-    ext: new Set(["pdf"]),
-  },
-  {
-    logo: videoLogo,
-    ext: new Set([
-      "mov",
-      "avi",
-      "mp4",
-      "wmv",
-      "avi",
-      "flv",
-      "f4v",
-      "mkv",
-      "webm",
-    ]),
-  },
-  {
-    logo: imageLogo,
-    ext: new Set(["jpeg", "jpg", "png", "gif", "tiff", "bmp", "tiff", "raw"]),
-  },
-];
-
 const fileIcon = computed(() => {
   const fileExt = props.file.fileExt;
-  for (let k = 0; k < iconSets.length; k++) {
-    const { logo, ext } = iconSets[k];
-    if (ext.has(fileExt)) return logo;
-  }
-  // Default file
-  return textLogo;
+  return _fileIcon(fileExt);
 });
 
 function handler(clickData: MouseEvent) {
@@ -69,7 +34,8 @@ function handler(clickData: MouseEvent) {
 }
 
 function onClick() {
-  console.log("file click");
+  const path = route.path;
+  router.push({ path, query: { file: props.file.id } });
 }
 </script>
 

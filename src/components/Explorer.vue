@@ -3,7 +3,7 @@ import { useAsyncState } from "@vueuse/core";
 import { useChainApi, Folder, File } from "../api/chain-api";
 import { useUserStore } from "../store/userStore";
 
-import { ref, watchEffect, onMounted, computed } from "vue";
+import { ref, watch, watchEffect, onMounted, computed } from "vue";
 import Loader from "./utils/Loader.vue";
 import { folderId } from "../router";
 import { useRouter } from "vue-router";
@@ -24,7 +24,10 @@ const removeModal = ref<null | InstanceType<typeof RemoveModal>>(null);
 
 const props = defineProps<{
   path: string[];
+  file?: string;
 }>();
+
+watch([props], () => {});
 
 // Fetch
 const fetchChildren = useAsyncState(
@@ -96,7 +99,7 @@ defineExpose({ editFolder, removeFolder });
 <template>
   <div class="flex flex-col">
     <!-- PathBar -->
-    <PathBar :path="props.path"></PathBar>
+    <PathBar :path="path"></PathBar>
     <!-- Loader -->
     <div
       v-if="fetchChildren.isLoading.value || isEmpty"
@@ -111,7 +114,7 @@ defineExpose({ editFolder, removeFolder });
       <!-- Folder -->
       <FolderTile
         v-for="folder in folders"
-        :path="props.path"
+        :path="path"
         :folder="folder.account"
         :onEdit="() => editFolder(folder.account)"
         :onRemove="() => removeFolder(folder.account)"
@@ -134,6 +137,10 @@ defineExpose({ editFolder, removeFolder });
     <!-- Remove file & folder modal -->
     <RemoveModal ref="removeModal" :onRemoved="onRemoved"></RemoveModal>
     <!-- File viewer -->
-    <Viewer></Viewer>
+    <Viewer
+      ref="viewer"
+      :files="files.map((f) => f.account)"
+      :fileId="props.file"
+    ></Viewer>
   </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed } from "vue";
 import {
   PlusIcon,
   FolderAddIcon,
@@ -14,11 +14,13 @@ const router = useRouter();
 const explorer = ref<null | InstanceType<typeof Explorer>>(null);
 
 const props = defineProps<{
-  path?: string[];
+  path: string | string[];
+  file?: string;
 }>();
+const path = computed(() => (Array.isArray(props.path) ? props.path : []));
 
 function newFile() {
-  const folder = folderId(props.path || []);
+  const folder = folderId(path.value);
   router.push({ path: "/file", query: { folder } });
 }
 </script>
@@ -46,6 +48,6 @@ function newFile() {
       </button>
     </div>
     <!-- Explorer -->
-    <Explorer ref="explorer" :path="props.path || []"></Explorer>
+    <Explorer ref="explorer" :path="path" :file="file"></Explorer>
   </div>
 </template>

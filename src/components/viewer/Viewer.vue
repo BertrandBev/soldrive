@@ -10,59 +10,106 @@ import {
   ArrowRightIcon,
 } from "@heroicons/vue/outline";
 import { useMagicKeys } from "@vueuse/core";
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, Ref } from "vue";
 import { useAsyncState } from "@vueuse/core";
 import ImageViewer from "./ImageViewer.vue";
 import VideoViewer from "./VideoViewer.vue";
 import { File } from "../../api/chain-api";
 import { useFileStore } from "../../store/fileStore";
+import {
+  fileIcon as _fileIcon,
+  fileType as _fileType,
+  FileType,
+} from "../../store/fileTypes";
+import Loader from "../utils/Loader.vue";
 const { left, right } = useMagicKeys();
-const { downloadFile, blobToBase64 } = useFileStore();
+const { downloadFile, arrayBufferToBase64 } = useFileStore();
+
+// type Loader = ReturnType<typeof useAsyncState<string | null, true>>;
+const props = defineProps<{
+  files: File[];
+  fileId?: string;
+}>();
 
 const opened = ref(false);
-const currentFileIdx = ref(0);
-const files = ref<File[]>([]);
+const fileIdx = ref(0);
 const file = computed(() => {
-  return currentFileIdx.value < files.value.length
-    ? files.value[currentFileIdx.value]
-    : null;
+  return fileIdx.value < props.files.length ? props.files[fileIdx.value] : null;
 });
-const loaders = ref([] as {}[]);
+
+const fileType = computed(() => {
+  return _fileType(file.value?.fileExt);
+});
+
+const fileIcon = computed(() => {
+  return _fileIcon(file.value?.fileExt);
+});
+
+const fileName = computed(() => {
+  return file.value?.name || "";
+});
+
+const cached = ref({} as { [key: number]: string });
 
 watch([left], () => left.value && leftPressed());
 watch([right], () => right.value && rightPressed());
 
+const { isLoading, error, execute, state } = useAsyncState(
+  async () => {
+    if (!file.value) return;
+    if (!cached.value[file.value.id]) {
+      const buf = await downloadFile(file.value, true);
+      const url = await arrayBufferToBase64(file.value.fileExt, buf);
+      cached.value[file.value.id] = url;
+    }
+    return cached.value[file.value.id];
+  },
+  null,
+  { immediate: false }
+);
+
+watch(
+  [file],
+  () => {
+    console.log("executing...");
+    execute();
+  },
+  { immediate: true }
+);
+
 function leftPressed() {
-  currentFileIdx.value = currentFileIdx.value - 1;
-  if (currentFileIdx.value < 0) currentFileIdx.value = files.value.length - 1;
+  fileIdx.value = fileIdx.value - 1;
+  if (fileIdx.value < 0) fileIdx.value = 0; //  props.files.length - 1;
 }
 
 function rightPressed() {
-  currentFileIdx.value = currentFileIdx.value + 1;
-  if (currentFileIdx.value >= files.value.length) currentFileIdx.value = 0;
+  fileIdx.value = fileIdx.value + 1;
+  if (fileIdx.value >= props.files.length)
+    fileIdx.value = props.files.length - 1;
 }
 
-function open(_files: File[], currentFile: File) {
-  files.value = _files;
-  // Instanciate loaders
-  loaders.value = _files.map((file) => {
-    return useAsyncState(
-      async () => {
-        const buf = await downloadFile(file, true);
-      },
-      null,
-      { immediate: false }
-    );
-  });
-  //
-  currentFileIdx.value = 0;
-  for (let k = 0; k < _files.length; k++) {
-    if (_files[k] == currentFile) {
-      currentFileIdx.value = k;
-      break;
+watch(
+  [props],
+  (current, old) => {
+    // Open viewer
+    opened.value = !!props.fileId;
+    if (!props.fileId) return;
+    // Parse file id
+    const id = parseInt(props.fileId);
+    fileIdx.value = 0;
+    for (let k = 0; k < props.files.length; k++) {
+      if (props.files[k].id == id) {
+        fileIdx.value = k;
+        break;
+      }
     }
-  }
-}
+    // Clear cache if needed
+    if (!old[0] || current[0].files != old[0].files) {
+      cached.value = {};
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
@@ -76,14 +123,19 @@ function open(_files: File[], currentFile: File) {
       <button class="btn btn-circle btn-ghost" @click="() => $router.back()">
         <ChevronLeftIcon class="w-5 h-5" />
       </button>
+      <!-- File icon -->
+      <img :src="fileIcon" class="w-[48px] h-[48px] object-contain" />
       <!-- File title -->
-      <div class="normal-case text-xl font-bold px-4">A cool image</div>
+      <div class="normal-case text-xl font-bold px-4">{{ fileName }}</div>
       <!-- Spacer -->
       <div class="flex-1"></div>
       <!-- Navigation -->
       <button class="btn btn-circle btn-ghost" @click="() => leftPressed()">
         <ArrowLeftIcon class="w-5 h-5" />
       </button>
+      <div class="text-md font-mono">
+        {{ fileIdx + 1 }}/{{ props.files.length }}
+      </div>
       <button class="btn btn-circle btn-ghost" @click="() => rightPressed()">
         <ArrowRightIcon class="w-5 h-5" />
       </button>
@@ -96,11 +148,19 @@ function open(_files: File[], currentFile: File) {
         <DotsVerticalIcon class="w-5 h-5" />
       </button>
     </div>
-    <!-- PDF -->
-    <!-- <PdfViewer></PdfViewer> -->
-    <!-- Image -->
-    <ImageViewer></ImageViewer>
-    <!-- Audio/Video -->
-    <!-- <VideoViewer></VideoViewer> -->
+    <!-- Loader -->
+    <div
+      v-if="isLoading || error"
+      class="w-full h-full flex items-center justify-center"
+    >
+      <Loader v-if="isLoading"></Loader>
+      <div v-else>File loading error</div>
+    </div>
+    <!-- Viewers -->
+    <template v-else>
+      <ImageViewer v-if="fileType == 'image'" :dataUri="state"></ImageViewer>
+      <PdfViewer v-if="fileType == 'pdf'" :dataUri="state"></PdfViewer>
+      <VideoViewer v-if="fileType == 'video'" :dataUri="state"></VideoViewer>
+    </template>
   </div>
 </template>

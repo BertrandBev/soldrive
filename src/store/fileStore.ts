@@ -13,6 +13,8 @@ import { useUserStore } from "./userStore";
 const FORCE_ANCHOR_WALLET = true;
 import axios from "axios";
 
+import { FileType, fileMeme } from "./fileTypes";
+
 export function spaceString(
   val: number,
   precision = 0,
@@ -131,24 +133,19 @@ function createFileStore() {
     else throw new Error("Download failed");
   }
 
-  async function fileToBase64Url() {
-    
-  }
-  
-  async function blobToBase64(blob: Blob) {
+  async function arrayBufferToBase64(ext: string, arrayBuffer: ArrayBuffer) {
+    const meme = fileMeme(ext);
+    const blob = new Blob([arrayBuffer], { type: meme });
     const reader = new FileReader();
     return new Promise<string>((resolve, reject) => {
-      reader.onloadend = () => resolve(reader.result as string);
+      reader.onloadend = () => {
+        const url = reader.result as string;
+        resolve(url);
+      };
       reader.onerror = (e) => reject(e);
       reader.readAsDataURL(blob);
     });
   }
-
-  async function arrayBufferToBase64(arrayBuffer: ArrayBuffer) {
-    const blob = new Blob([arrayBuffer]);
-    return blobToBase64(blob);
-  }
-
 
   async function downloadFile(
     file: File,
@@ -188,7 +185,7 @@ function createFileStore() {
     withdrawBalance,
     uploadFile,
     downloadArweave,
-    blobToBase64,
+    arrayBufferToBase64,
     downloadFile,
   };
 }

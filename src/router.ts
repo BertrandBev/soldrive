@@ -8,15 +8,12 @@ const router = VueRouter.createRouter({
   routes: [
     { path: "/", redirect: "/explorer" },
     {
-      path: "/explorer",
-      component: Home,
-      meta: { name: "SolDrive", hideBack: true },
-    },
-    {
       path: "/explorer/:path(.*)*",
       component: Home,
       meta: { name: "SolDrive", hideBack: true },
-      props: true,
+      props: (route) => {
+        return { ...route.query, ...route.params };
+      },
     },
     {
       path: "/file",
