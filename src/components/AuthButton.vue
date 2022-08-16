@@ -76,8 +76,6 @@ async function fetchEncryptionFromModal() {
     toast.error(msg);
   }
 }
-
-const route = useRoute();
 </script>
 
 <template>

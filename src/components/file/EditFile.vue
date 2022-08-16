@@ -37,7 +37,7 @@ const isNew = computed(() => {
 
 function genFile() {
   return {
-    name: "",
+    name: Buffer.alloc(0),
     parent: 0,
     access: "private" as Access,
     fileExt: "",
@@ -50,6 +50,7 @@ function genFile() {
 // File data
 const data = ref({
   loaded: false,
+  fileName: "",
   file: genFile(),
   originalFile: genFile(),
 });

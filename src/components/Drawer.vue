@@ -6,6 +6,7 @@ const route = useRoute();
 const menuItems = [
   { name: "Home", route: "/explorer" },
   { name: "Account", route: "/account" },
+  { name: "About", route: "/" },
 ];
 </script>
 

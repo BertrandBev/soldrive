@@ -27,6 +27,12 @@ function onMenuClicked() {
 </template>
 
 <style>
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .full-center {
   width: 100%;
   height: 100%;

@@ -150,7 +150,7 @@ function download() {
         <ChevronLeftIcon class="w-5 h-5" />
       </button>
       <!-- File icon -->
-      <img :src="fileIcon" class="w-[48px] h-[48px] object-contain" />
+      <img :src="fileIcon" class="w-[42px] h-[42px] object-contain" />
       <!-- File title -->
       <div class="normal-case text-xl font-bold px-4">{{ fileName }}</div>
       <!-- Spacer -->

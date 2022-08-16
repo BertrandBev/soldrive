@@ -87,7 +87,10 @@ function move() {
           src="../../assets/solana-logo.png"
         />
       </div>
-      <div class="absolute right-0 top-0 p-2 tooltip" data-tip="encrypted">
+      <div
+        class="absolute right-0 top-0 p-2 tooltip"
+        :data-tip="isEncrypted ? 'encrypted' : 'unencrypted'"
+      >
         <LockClosedIcon
           v-if="isEncrypted"
           class="w-[16px] h-[16px] text-green-400"

@@ -38,12 +38,14 @@ function onMoved() {
     <!-- Toolbar -->
     <div v-if="isEmpty" class="w-full flex mt-2 mb-2">
       <!-- Filter -->
-      <button class="btn btn-ghost gap-2">
-        Filter
-        <FilterIcon class="w-5 h-5"></FilterIcon>
-      </button>
+      <div class="tooltip tooltip-right" data-tip="feature coming soon">
+        <button class="btn btn-ghost gap-2">
+          Filter
+          <FilterIcon class="w-5 h-5"></FilterIcon>
+        </button>
+      </div>
       <!-- Spacer -->
-      <div class="w-full"></div>
+      <div class="flex-1"></div>
       <!-- Add button -->
       <button class="btn btn-ghost gap-2" @click="explorer?.editFolder()">
         New folder
