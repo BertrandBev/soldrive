@@ -122,11 +122,6 @@ watch(
         break;
       }
     }
-    // Clear cache if needed
-    if (!old[0] || current[0].files != old[0].files) {
-      console.log("File cache cleared");
-      cached.value = {};
-    }
   },
   { immediate: true }
 );
@@ -136,6 +131,12 @@ function download() {
   if (!state.value) return toast.error("The file hasn't been loaded yet");
   clientDownload(file.value.name + "." + file.value.fileExt, state.value);
 }
+
+function clearCache(ids: number[]) {
+  ids.forEach((id) => delete cached.value[id]);
+}
+
+defineExpose({ clearCache });
 </script>
 
 <template>

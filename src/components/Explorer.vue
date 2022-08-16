@@ -21,6 +21,7 @@ const { isLoggedIn } = useUserStore();
 const router = useRouter();
 const editFolderModal = ref<null | InstanceType<typeof EditFolderModal>>(null);
 const removeModal = ref<null | InstanceType<typeof RemoveModal>>(null);
+const viewer = ref<null | InstanceType<typeof Viewer>>(null);
 
 const props = defineProps<{
   path: string[];
@@ -34,7 +35,9 @@ const fetchChildren = useAsyncState(
   async () => {
     if (!api.value) return;
     const folder = folderId(props.path);
-    return await api.value.fetchChildren(folder, true);
+    const children = await api.value.fetchChildren(folder, true);
+    viewer.value?.clearCache(children.files.map(f => f.account.id));
+    return children;
   },
   null,
   {
@@ -136,6 +139,7 @@ defineExpose({ editFolder, removeFolder, loadChildren });
     <RemoveModal ref="removeModal" :onRemoved="loadChildren"></RemoveModal>
     <!-- File viewer -->
     <Viewer
+      ref="viewer"
       v-if="files"
       :onEdit="editFile"
       :onRemove="removeFile"

@@ -16,10 +16,10 @@ import Blocks from "./about/Blocks.vue";
       <div class="flex flex-col flex-1 p-4 justify-center text-justify">
         <div class="text-3xl">Welcome to SolDrive</div>
         <div class="mt-5">
-          SolDrive is completely on-chain file storage platform on Solana,
-          featuring a file manager to organise files and folder, a note editor
-          to easily edit text files and take notes, as well as several files
-          viewers to explore the stored files directly online
+          SolDrive is completely on-chain cloud storage platform on Solana,
+          featuring a file manager to organise files and folders, a text editor
+          to easily edit text files and take notes, as well as several file
+          viewers to explore the stored files directly online.
         </div>
       </div>
       <!-- Graphic -->
@@ -37,10 +37,11 @@ import Blocks from "./about/Blocks.vue";
       <div class="flex flex-col flex-1 p-4 justify-center text-justify">
         <div class="text-3xl">Backends</div>
         <div class="mt-5">
-          Files and notes can be stored both on-chain directly on generated
-          Solana Accounts, or on Arweave a specialized file chain, drastically
-          reducing the cost of storing files. Links to those files are then
-          maintained on chain
+          Files and notes can be stored both on-chain directly Solana Accounts,
+          or on Arweave, a specialized file chain, to drastically reduce the
+          uploading cost. Links to those files are then maintained on chain.
+          Regardless of the backend chosen, the hosting is paid once on a data
+          size basis and the data lives forever.
         </div>
       </div>
 
@@ -66,8 +67,8 @@ import Blocks from "./about/Blocks.vue";
         <div class="mt-5">
           All the assets are encrypted by default using a key derived from a
           Solana Wallet. No need to remember yet another password. Assets can
-          also be shared unencrypted with read and edit rights (feature coming
-          soon)
+          also be shared unencrypted with read and edit rights for collaborative
+          text editing (feature coming soon).
         </div>
       </div>
       <!-- Graphic -->
@@ -87,7 +88,7 @@ import Blocks from "./about/Blocks.vue";
         <div class="mt-5">
           Any file can be stored, and several file types can be opened directly
           on Soldrive, including text documents, images, videos, audio files and
-          PDFs. A built-in note editor allows for editing notes directly
+          PDFs. A built-in note editor enables online notes edition.
         </div>
       </div>
       <!-- Graphic -->
