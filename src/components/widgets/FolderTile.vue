@@ -7,11 +7,13 @@ import { useRouter, useRoute } from "vue-router";
 import { ref, watchEffect, onMounted, computed } from "vue";
 import Loader from "../utils/Loader.vue";
 import ContextMenu from "../utils/ContextMenu.vue";
+import { useClipbardStore } from "../../store/clipboardStore";
 
 // File icons
 const { api, wallet } = useChainApi();
 const { isLoggedIn } = useUserStore();
 const router = useRouter();
+const { pushFolder, hasFolder } = useClipbardStore();
 
 const props = defineProps<{
   path: string[];
@@ -32,13 +34,22 @@ function onClick() {
   const path = [...props.path, props.folder.id].join("/");
   router.push({ path: `/explorer/${path}` });
 }
+
+const isMoving = computed(() => {
+  return hasFolder(props.folder);
+});
+
+function move() {
+  pushFolder(props.folder);
+}
 </script>
 
 <template>
   <div>
-    <!-- Card -->
+    <!-- Folder -->
     <div
       class="card card-bordered btn btn-ghost border-slate-500 w-full h-[180px] items-start p-0 overflow-visible"
+      :class="{ 'opacity-50': isMoving }"
       @contextmenu.prevent="(ev) => handler(ev)"
       style="text-transform: initial"
       @click="onClick()"
@@ -49,7 +60,7 @@ function onClick() {
       </div>
       <!-- Name -->
       <div class="flex text-left p-3">
-        <p class="text">
+        <p class="text-2-lines">
           {{ folder.name }}
         </p>
       </div>
@@ -60,19 +71,11 @@ function onClick() {
         <a href="#" @click.prevent="props.onEdit">Edit</a>
       </li>
       <li>
+        <a href="#" @click.prevent="move">Move</a>
+      </li>
+      <li>
         <a href="#" @click.prevent="props.onRemove">Delete</a>
       </li>
     </ContextMenu>
   </div>
 </template>
-
-<style scoped>
-.text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2; /* number of lines to show */
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-</style>

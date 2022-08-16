@@ -85,15 +85,10 @@ function removeFile(file: File) {
   removeModal.value?.openForFile(file);
 }
 
-function onFolderUpdated() {
+function loadChildren() {
   fetchChildren.execute();
 }
-
-function onRemoved() {
-  fetchChildren.execute();
-}
-
-defineExpose({ editFolder, removeFolder });
+defineExpose({ editFolder, removeFolder, loadChildren });
 </script>
 
 <template>
@@ -135,10 +130,10 @@ defineExpose({ editFolder, removeFolder });
     <!-- Edit folder modal -->
     <EditFolderModal
       ref="editFolderModal"
-      :onFolderUpdated="onFolderUpdated"
+      :onFolderUpdated="loadChildren"
     ></EditFolderModal>
     <!-- Remove file & folder modal -->
-    <RemoveModal ref="removeModal" :onRemoved="onRemoved"></RemoveModal>
+    <RemoveModal ref="removeModal" :onRemoved="loadChildren"></RemoveModal>
     <!-- File viewer -->
     <Viewer
       v-if="files"

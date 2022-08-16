@@ -328,13 +328,15 @@ export function getAPI(
     }
   }
 
-  async function updateFiles(
-    ids: number[],
+  async function updateParent(
+    fileIds: number[],
+    folderIds: number[],
     parent: number,
     signers: web3.Keypair[] = defaultSigners
   ) {
-    const instructions = await Promise.all(
-      ids.map(async (id) => {
+    // Build transaction list
+    const tx = [
+      ...fileIds.map(async (id) => {
         const filePda = await getFilePda(id);
         return program.methods
           .updateFile(id, parent, null, null, null, null, null, null)
@@ -344,8 +346,20 @@ export function getAPI(
           })
           .signers(signers)
           .transaction();
-      })
-    );
+      }),
+      ...folderIds.map(async (id) => {
+        const folderPda = await getFolderPda(id);
+        return program.methods
+          .updateFolder(id, parent, null)
+          .accounts({
+            folder: folderPda.publicKey,
+            authority: authority,
+          })
+          .signers(signers)
+          .transaction();
+      }),
+    ];
+    const instructions = await Promise.all(tx);
     await program.provider.sendAll(
       instructions.map((tx) => ({
         tx,
@@ -427,7 +441,7 @@ export function getAPI(
     // Update
     updateFolder,
     updateFile,
-    updateFiles,
+    updateParent,
     // Remove
     removeFolder,
     removeFile,

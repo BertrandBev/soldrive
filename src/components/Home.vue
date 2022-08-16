@@ -9,26 +9,34 @@ import {
 import { useRoute, useRouter } from "vue-router";
 import { folderId } from "../router";
 import Explorer from "./Explorer.vue";
+import { useClipbardStore } from "../store/clipboardStore";
+import ClipboardBar from "./widgets/ClipboardBar.vue";
 
 const router = useRouter();
+const { isEmpty } = useClipbardStore();
 const explorer = ref<null | InstanceType<typeof Explorer>>(null);
 
 const props = defineProps<{
   path: string | string[];
   file?: string;
 }>();
+
+const folder = computed(() => folderId(path.value));
 const path = computed(() => (Array.isArray(props.path) ? props.path : []));
 
 function newFile() {
-  const folder = folderId(path.value);
-  router.push({ path: "/file", query: { folder } });
+  router.push({ path: "/file", query: { folder: folder.value } });
+}
+
+function onMoved() {
+  explorer.value!.loadChildren();
 }
 </script>
 
 <template>
   <div class="w-full h-full flex flex-col">
     <!-- Toolbar -->
-    <div class="w-full flex mt-2 mb-2">
+    <div v-if="isEmpty" class="w-full flex mt-2 mb-2">
       <!-- Filter -->
       <button class="btn btn-ghost gap-2">
         Filter
@@ -47,6 +55,8 @@ function newFile() {
         <DocumentAddIcon class="w-5 h-5"></DocumentAddIcon>
       </button>
     </div>
+    <!-- Clipboard -->
+    <ClipboardBar v-else :folder="folder" :onMoved="onMoved"></ClipboardBar>
     <!-- Explorer -->
     <Explorer ref="explorer" :path="path" :file="file"></Explorer>
   </div>

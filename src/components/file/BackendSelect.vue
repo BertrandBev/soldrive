@@ -28,9 +28,21 @@ function setBackend(backend: Backend) {
         class="tab"
         :class="{ 'tab-active': modelValue == back }"
         @click="() => setBackend(back)"
-        >{{ back }}</a
       >
+        {{ back }}
+      </a>
     </div>
+    <!-- Logo -->
+    <img
+      v-if="modelValue == 'arweave'"
+      class="w-[16px] h-[16px] ml-2"
+      src="../../assets/arweave-logo.png"
+    />
+    <img
+      v-else
+      class="w-[16px] h-[16px] ml-2"
+      src="../../assets/solana-logo.png"
+    />
     <!-- Tooltip -->
     <button class="btn btn-xs btn-ghost ml-2" @click="infoModalOpen = true">
       <InformationCircleIcon class="w-5 h-5"></InformationCircleIcon>

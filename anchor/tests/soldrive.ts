@@ -37,7 +37,7 @@ const {
   // Update
   updateFolder,
   updateFile,
-  updateFiles,
+  updateParent,
   // Remove
   removeFolder,
 } = getAPI(user.publicKey, program, [user]);
@@ -175,7 +175,7 @@ describe("soldrive", () => {
     } as File);
 
     // Now update parents
-    await updateFiles([2, 3], 2);
+    await updateParent([2, 3], [], 2);
 
     // And retrieve all files
     const firstChildren = await fetchChildren(1, true);

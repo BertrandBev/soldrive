@@ -6,10 +6,12 @@ import * as anchor from "@project-serum/anchor";
 import { useToast } from "vue-toastification";
 import web3 = anchor.web3;
 import { useUserStore } from "../../store/userStore";
+import { useClipbardStore } from "../../store/clipboardStore";
 
 const { api, wallet, connection } = useChainApi();
 const toast = useToast();
 const { user, fetchUser, encrypt, decrypt } = useUserStore();
+const { updateFolder } = useClipbardStore();
 
 //
 const props = defineProps<{
@@ -18,19 +20,20 @@ const props = defineProps<{
 
 // Folder data
 const data = ref({
-  id: -1,
-  name: "",
-  parent: 0,
+  originalFolder: null as Folder | null,
+  folder: { id: -1, name: "", parent: 0 } as Folder,
 });
 
+const folder = computed(() => data.value.folder);
+
 const isNew = computed(() => {
-  return data.value.id < 0;
+  return data.value.originalFolder == null;
 });
 
 // Check data
 const emptyName = ref(false);
 watchEffect(() => {
-  emptyName.value = data.value.name.length == 0;
+  emptyName.value = folder.value.name.length == 0;
 });
 
 const modalOpen = ref(false);
@@ -54,18 +57,18 @@ const { isLoading: folderSaving, execute: saveFolder } = useAsyncState(
     if (isNew.value) {
       // Create folder
       const id = user.value.folderId + 1;
-      await api.value?.createFolder(id, data.value.parent, data.value.name);
+      await api.value?.createFolder(id, folder.value.parent, folder.value.name);
       // Bump id
       await fetchUser.execute();
-      toast.success("Folder successfully created!");
     } else {
       // Update folder
       await api.value?.updateFolder(
-        data.value.id,
-        data.value.parent,
-        data.value.name
+        folder.value.id,
+        folder.value.parent,
+        folder.value.name
       );
-      toast.success("Folder successfully updated!");
+      // Update clipboard
+      updateFolder(data.value.originalFolder!, folder.value);
     }
     // Close modal & callback
     modalOpen.value = false;
@@ -80,15 +83,15 @@ const { isLoading: folderSaving, execute: saveFolder } = useAsyncState(
   }
 );
 
-async function open(parent: number, folder: Folder | undefined = undefined) {
+async function open(parent: number, folder: Folder | null = null) {
   if (folder) {
-    data.value.id = folder.id;
-    data.value.name = folder.name;
-    data.value.parent = folder.parent;
+    data.value.originalFolder = folder;
+    data.value.folder = folder;
   } else {
-    data.value.id = -1;
-    data.value.name = "";
-    data.value.parent = parent;
+    data.value.originalFolder = null;
+    data.value.folder.id = -1;
+    data.value.folder.name = "";
+    data.value.folder.parent = parent;
   }
   modalOpen.value = true;
 }
@@ -102,7 +105,7 @@ defineExpose({ open });
     <div class="modal-box">
       <h3 class="font-bold text-lg">{{ title }}</h3>
       <input
-        v-model="data.name"
+        v-model="folder.name"
         class="input input-info input-bordered w-full mt-3"
         :class="{
           'input-info': !emptyName,

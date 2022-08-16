@@ -4,10 +4,12 @@ import { useChainApi, Folder, File } from "../../api/chain-api";
 import { useAsyncState } from "@vueuse/core";
 import * as anchor from "@project-serum/anchor";
 import { useToast } from "vue-toastification";
+import { useClipbardStore } from "../../store/clipboardStore";
 import web3 = anchor.web3;
 
 const { api, wallet, connection } = useChainApi();
 const toast = useToast();
+const { popFile, popFolder } = useClipbardStore();
 
 const props = defineProps<{
   onRemoved: () => void;
@@ -37,9 +39,14 @@ const { isLoading, execute } = useAsyncState(
       }
       await api.value!.removeFolder(folder.value!.id);
     }
+    // Pop clipboard
+    if (isFile.value) {
+      popFile(file.value!);
+    } else {
+      popFolder(folder.value!);
+    }
     // Fetch user
     await api.value!.fetchUser();
-    toast.success(`${isFile.value ? "File" : "Folder"} successfully removed!`);
     modalOpen.value = false;
     props.onRemoved();
   },

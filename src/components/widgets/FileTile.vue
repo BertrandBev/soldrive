@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useAsyncState } from "@vueuse/core";
 import { useChainApi, File } from "../../api/chain-api";
 import { useUserStore } from "../../store/userStore";
 
@@ -9,11 +8,13 @@ import ContextMenu from "../utils/ContextMenu.vue";
 import { useRouter, useRoute } from "vue-router";
 import { fileIcon as _fileIcon } from "../../store/fileTypes";
 import { LockClosedIcon, LockOpenIcon } from "@heroicons/vue/solid";
+import { useClipbardStore } from "../../store/clipboardStore";
 
 const { api, wallet } = useChainApi();
 const { isLoggedIn } = useUserStore();
 const router = useRouter();
 const route = useRoute();
+const { pushFile, hasFile } = useClipbardStore();
 
 const props = defineProps<{
   file: File;
@@ -46,6 +47,14 @@ const isArweave = computed(() => {
 const isEncrypted = computed(() => {
   return props.file.access == "private";
 });
+
+const isMoving = computed(() => {
+  return hasFile(props.file);
+});
+
+function move() {
+  pushFile(props.file);
+}
 </script>
 
 <template>
@@ -53,6 +62,7 @@ const isEncrypted = computed(() => {
     <!-- File -->
     <div
       class="card card-bordered btn btn-ghost shadow-xl border-slate-500 w-full h-[180px] items-start p-0 relative overflow-visible"
+      :class="{ 'opacity-50': isMoving }"
       @contextmenu.prevent="(ev) => handler(ev)"
       style="text-transform: initial"
       @click="onClick()"
@@ -80,14 +90,17 @@ const isEncrypted = computed(() => {
       <div class="absolute right-0 top-0 p-2 tooltip" data-tip="encrypted">
         <LockClosedIcon
           v-if="isEncrypted"
-          class="w-[16px] h-[16px]"
+          class="w-[16px] h-[16px] text-green-400"
         ></LockClosedIcon>
-        <LockOpenIcon v-else class="w-[16px] h-[16px]"></LockOpenIcon>
+        <LockOpenIcon
+          v-else
+          class="w-[16px] h-[16px] text-orange-400"
+        ></LockOpenIcon>
       </div>
       <!-- Row -->
       <div class="flex text-left p-3">
         <!-- Name -->
-        <p class="text">
+        <p class="text-2-lines">
           {{ props.file.name }}
         </p>
       </div>
@@ -98,19 +111,11 @@ const isEncrypted = computed(() => {
         <a href="#" @click.prevent="props.onEdit">Edit</a>
       </li>
       <li>
+        <a href="#" @click.prevent="move">Move</a>
+      </li>
+      <li>
         <a href="#" @click.prevent="props.onRemove">Delete</a>
       </li>
     </ContextMenu>
   </div>
 </template>
-
-<style scoped>
-.text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2; /* number of lines to show */
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-</style>

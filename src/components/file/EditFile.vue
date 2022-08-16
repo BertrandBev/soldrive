@@ -9,6 +9,7 @@ import web3 = anchor.web3;
 import { useUserStore } from "../../store/userStore";
 import Loader from "../utils/Loader.vue";
 import Content from "./Content.vue";
+import { useClipbardStore } from "../../store/clipboardStore";
 
 import BackendSelect from "./BackendSelect.vue";
 import AccessSelect from "./AccessSelect.vue";
@@ -17,6 +18,7 @@ const { api, wallet, connection } = useChainApi();
 const toast = useToast();
 const { user, fetchUser, isLoggedIn } = useUserStore();
 const router = useRouter();
+const { updateFile } = useClipbardStore();
 
 const props = defineProps<{
   id?: string;
@@ -116,7 +118,6 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
         ...file.value,
         content: payload!.content,
       } as File);
-      toast.success("File successfully created!");
     } else {
       //
       if (!data.value.loaded) throw new Error("File not loaded");
@@ -130,8 +131,9 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
         backend: file.value.backend,
         content: payload?.content,
       });
-      toast.success("File successfully updated!");
     }
+    // Update clipboard
+    updateFile(data.value.originalFile, file.value);
     // Bump id
     await fetchUser.execute();
     // Nav back (prevent going forward if id got bumped)
@@ -171,7 +173,10 @@ const updated = computed(() => {
     <Loader v-else-if="fileLoading"></Loader>
     <div v-else-if="fileLoadingError">File loading error</div>
     <!-- Card -->
-    <div v-else class="card w-full border border-info flex-col p-6 bg-[#00000033]">
+    <div
+      v-else
+      class="card w-full border border-info flex-col p-6 bg-[#00000033]"
+    >
       <div class="flex items-center">
         <!-- Name -->
         <div class="flex flex-col w-full">

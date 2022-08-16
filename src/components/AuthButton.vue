@@ -125,7 +125,7 @@ const route = useRoute();
         transaction won't be commited to the blockchain
       </p>
       <div class="modal-action">
-        <div class="btn" @click="fetchEncryptionFromModal">Yay!</div>
+        <div class="btn" @click="fetchEncryptionFromModal">Ok</div>
       </div>
     </div>
   </div>
