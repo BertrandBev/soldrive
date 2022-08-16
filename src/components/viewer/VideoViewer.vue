@@ -23,7 +23,7 @@ const url = computed(() => {
 </script>
 
 <template>
-  <div class="w-full h-full flex flex-col items-center justify-center">
+  <div class="full-center flex-col">
     <!-- video element -->
     <vue-plyr v-if="isVideo && url">
       <video controls crossorigin="true" playsinline>

@@ -5,18 +5,10 @@ import { watch } from "vue";
 const props = defineProps<{
   dataUri?: string | null;
 }>();
-
-watch(
-  [props],
-  () => {
-    console.log("uri", props.dataUri);
-  },
-  { immediate: true }
-);
 </script>
 
 <template>
-  <div class="w-full h-full flex items-center justify-center">
+  <div class="full-center">
     <img
       v-if="dataUri"
       :src="dataUri || ''"

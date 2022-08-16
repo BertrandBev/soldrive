@@ -138,7 +138,9 @@ defineExpose({ editFolder, removeFolder });
     <RemoveModal ref="removeModal" :onRemoved="onRemoved"></RemoveModal>
     <!-- File viewer -->
     <Viewer
-      ref="viewer"
+      v-if="files"
+      :onEdit="editFile"
+      :onRemove="removeFile"
       :files="files.map((f) => f.account)"
       :fileId="props.file"
     ></Viewer>

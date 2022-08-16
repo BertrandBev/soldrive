@@ -22,6 +22,13 @@ import {
   FileType,
 } from "../../store/fileTypes";
 import Loader from "../utils/Loader.vue";
+import { useToast } from "vue-toastification";
+import TextViewer from "./TextViewer.vue";
+import { useRoute, useRouter } from "vue-router";
+
+const route = useRoute();
+const router = useRouter();
+const toast = useToast();
 const { left, right } = useMagicKeys();
 const { downloadFile, arrayBufferToBase64, clientDownload } = useFileStore();
 
@@ -29,11 +36,14 @@ const { downloadFile, arrayBufferToBase64, clientDownload } = useFileStore();
 const props = defineProps<{
   files: File[];
   fileId?: string;
+  onEdit: (file: File) => void;
+  onRemove: (file: File) => void;
 }>();
 
 const opened = ref(false);
-const fileIdx = ref(0);
+const fileIdx = ref<number | null>(null);
 const file = computed(() => {
+  if (fileIdx.value == null) return null;
   return fileIdx.value < props.files.length ? props.files[fileIdx.value] : null;
 });
 
@@ -71,20 +81,30 @@ const { isLoading, error, execute, state } = useAsyncState(
 watch(
   [file],
   () => {
-    console.log("executing...");
     execute();
   },
   { immediate: true }
 );
 
+function navToFileId(fileId: number) {
+  const path = route.path;
+  router.replace({ path, query: { file: fileId } });
+}
+
 function leftPressed() {
-  fileIdx.value = fileIdx.value - 1;
-  if (fileIdx.value < 0) fileIdx.value = props.files.length - 1;
+  let idx = fileIdx.value! - 1;
+  if (idx < 0) idx = props.files.length - 1;
+  navToFileId(props.files[idx].id);
 }
 
 function rightPressed() {
-  fileIdx.value = fileIdx.value + 1;
-  if (fileIdx.value >= props.files.length) fileIdx.value = 0;
+  let idx = fileIdx.value! + 1;
+  if (idx >= props.files.length) idx = 0;
+  navToFileId(props.files[idx].id);
+}
+
+function navBack() {
+  router.back();
 }
 
 watch(
@@ -104,6 +124,7 @@ watch(
     }
     // Clear cache if needed
     if (!old[0] || current[0].files != old[0].files) {
+      console.log("File cache cleared");
       cached.value = {};
     }
   },
@@ -111,21 +132,21 @@ watch(
 );
 
 function download() {
-  if (!file.value || !state.value) return; // toast
-  console.log("downlaod!");
-  clientDownload(file.value?.name + "." + file.value?.fileExt, state.value!);
+  if (!file.value) return toast.error("No file");
+  if (!state.value) return toast.error("The file hasn't been loaded yet");
+  clientDownload(file.value.name + "." + file.value.fileExt, state.value);
 }
 </script>
 
 <template>
   <div
     v-if="opened"
-    class="w-screen h-screen bg-[#000000cc] fixed top-0 left-0 z-[100] flex flex-col"
+    class="w-screen h-screen bg-[#000000dd] fixed top-0 left-0 z-[100] flex flex-col"
   >
     <!-- Toolbar -->
     <div class="w-full flex items-center p-2">
       <!-- Back button -->
-      <button class="btn btn-circle btn-ghost" @click="() => $router.back()">
+      <button class="btn btn-circle btn-ghost" @click="navBack">
         <ChevronLeftIcon class="w-5 h-5" />
       </button>
       <!-- File icon -->
@@ -139,7 +160,7 @@ function download() {
         <ArrowLeftIcon class="w-5 h-5" />
       </button>
       <div class="text-md font-mono">
-        {{ fileIdx + 1 }}/{{ props.files.length }}
+        {{ (fileIdx || 0) + 1 }}/{{ props.files.length }}
       </div>
       <button class="btn btn-circle btn-ghost" @click="rightPressed">
         <ArrowRightIcon class="w-5 h-5" />
@@ -149,27 +170,42 @@ function download() {
         <DownloadIcon class="w-5 h-5" />
       </button>
       <!-- Menu -->
-      <button class="btn btn-circle btn-ghost" @click="">
-        <DotsVerticalIcon class="w-5 h-5" />
-      </button>
+      <div class="dropdown dropdown-end">
+        <!-- <label tabindex="0" class="btn m-1">Click</label> -->
+        <button class="btn btn-circle btn-ghost">
+          <DotsVerticalIcon class="w-5 h-5" />
+        </button>
+        <ul
+          tabindex="0"
+          class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52"
+        >
+          <li><a @click.prevent="() => onEdit(file!)">Edit</a></li>
+          <li><a @click.prevent="() => onRemove(file!)">Delete</a></li>
+        </ul>
+      </div>
     </div>
     <!-- Loader -->
-    <div
-      v-if="isLoading || error"
-      class="w-full h-full flex items-center justify-center"
-    >
+    <div v-if="isLoading || error" class="full-center">
       <Loader v-if="isLoading"></Loader>
       <div v-else>File loading error</div>
     </div>
     <!-- Viewers -->
     <template v-else>
       <ImageViewer v-if="fileType == 'image'" :dataUri="state"></ImageViewer>
-      <PdfViewer v-if="fileType == 'pdf'" :dataUri="state"></PdfViewer>
+      <PdfViewer v-else-if="fileType == 'pdf'" :dataUri="state"></PdfViewer>
       <VideoViewer
-        v-if="fileType == 'video' || fileType == 'audio'"
+        v-else-if="fileType == 'video' || fileType == 'audio'"
         :file="file"
         :dataUri="state"
       ></VideoViewer>
+      <TextViewer v-else-if="fileType == 'text'" :dataUri="state"> </TextViewer>
+      <!-- Downloader -->
+      <div v-else class="full-center">
+        <div class="btn btn-ghost gap-4" @click="download">
+          Download
+          <DownloadIcon class="h-8 w-8"></DownloadIcon>
+        </div>
+      </div>
     </template>
   </div>
 </template>

@@ -180,7 +180,6 @@ function createFileStore() {
     var element = document.createElement("a");
     element.setAttribute("href", base64);
     element.setAttribute("download", filename);
-    console.log("href", base64);
     element.style.display = "none";
     document.body.appendChild(element);
     element.click();
