@@ -38,7 +38,7 @@ pub mod soldrive {
         Ok(())
     }
 
-    pub fn create_folder(ctx: Context<CreateFolder>, parent: u32, name: String) -> Result<()> {
+    pub fn create_folder(ctx: Context<CreateFolder>, parent: u32, name: Vec<u8>) -> Result<()> {
         // Check args
         require!(name.len() <= Folder::NAME_MAX_LEN, ErrorCode::StringTooLong);
         let user = &mut ctx.accounts.user;
@@ -62,7 +62,7 @@ pub mod soldrive {
         ctx: Context<UpdateFolder>,
         _id: u32,
         parent: Option<u32>,
-        name: Option<String>,
+        name: Option<Vec<u8>>,
     ) -> Result<()> {
         // Check args
         let folder = &mut ctx.accounts.folder;
@@ -86,7 +86,7 @@ pub mod soldrive {
         ctx: Context<CreateFile>,
         max_size: u32,
         parent: u32,
-        name: String,
+        name: Vec<u8>,
         file_ext: String,
         file_size: u64,
         access: Access,
@@ -132,7 +132,7 @@ pub mod soldrive {
         ctx: Context<UpdateFile>,
         _id: u32,
         parent: Option<u32>,
-        name: Option<String>,
+        name: Option<Vec<u8>>,
         file_ext: Option<String>,
         file_size: Option<u64>,
         access: Option<Access>,
@@ -309,7 +309,7 @@ pub struct User {
 }
 
 impl User {
-    const PADDING: usize = 64;
+    const PADDING: usize = 48;
     const SIZE: usize = 8 // discriminator
         + 8  // created_at
         + 4  // folder_id
@@ -327,12 +327,12 @@ pub struct Folder {
     pub id: u32, // 1 indexed
     pub created_at: i64,
     pub parent: u32,
-    pub name: String,
+    pub name: Vec<u8>,
 }
 
 impl Folder {
-    const PADDING: usize = 64;
-    const NAME_MAX_LEN: usize = 32;
+    const PADDING: usize = 48;
+    const NAME_MAX_LEN: usize = 64;
 
     const SIZE: usize = 8 // discriminator
         + 32 // owner
@@ -362,7 +362,7 @@ pub struct File {
     pub id: u32,
     pub created_at: i64,
     pub parent: u32,
-    pub name: String,
+    pub name: Vec<u8>,
     pub file_ext: String,
     pub file_size: u64,
     pub access: Access,
@@ -377,8 +377,8 @@ pub struct FileEncoder {
 }
 
 impl File {
-    const PADDING: usize = 64;
-    const NAME_MAX_LEN: usize = 48;
+    const PADDING: usize = 48;
+    const NAME_MAX_LEN: usize = 64;
     const EXT_MAX_LEN: usize = 4;
 
     fn size(byte_count: u32) -> usize {

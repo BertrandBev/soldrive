@@ -27,6 +27,7 @@ export type User = Awaited<ReturnType<typeof typeProg.account.user.fetch>>;
 export type Folder = Awaited<ReturnType<typeof typeProg.account.folder.fetch>>;
 type FileRaw = Awaited<ReturnType<typeof typeProg.account.file.fetch>>;
 export type File = FileRaw & {
+  name: Buffer;
   content: Buffer;
   access: Access;
   backend: Backend;
@@ -204,7 +205,7 @@ export function getAPI(
   async function createFolder(
     id: number,
     parent: number,
-    name: string,
+    name: Buffer,
     signers: web3.Keypair[] = defaultSigners
   ) {
     const userPda = await getUserPda();
@@ -255,7 +256,7 @@ export function getAPI(
   async function updateFolder(
     id: number,
     parent?: number,
-    name?: string,
+    name?: Buffer,
     signers: web3.Keypair[] = defaultSigners
   ) {
     const folderPda = await getFolderPda(id);
@@ -273,7 +274,7 @@ export function getAPI(
     id: number,
     updates: {
       parent?: number;
-      name?: string;
+      name?: Buffer;
       fileExt?: string;
       fileSize?: anchor.BN;
       access?: Access;
