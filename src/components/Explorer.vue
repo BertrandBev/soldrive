@@ -110,7 +110,7 @@ defineExpose({ editFolder, removeFolder });
       <div v-else-if="isEmpty">The directory is empty</div>
     </div>
     <!-- Files -->
-    <div v-else class="flex flex-wrap gap-3">
+    <div v-else class="grid grid-cols-2 gap-3 p-3">
       <!-- Folder -->
       <FolderTile
         v-for="folder in folders"

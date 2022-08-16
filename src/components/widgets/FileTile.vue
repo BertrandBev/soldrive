@@ -43,17 +43,22 @@ function onClick() {
   <div>
     <!-- File -->
     <div
-      class="card card-bordered btn btn-ghost shadow-xl border-slate-500 w-[180px] h-[180px] items-center"
+      class="card card-bordered btn btn-ghost shadow-xl border-slate-500 w-full h-[180px] items-start p-0"
       @contextmenu.prevent="(ev) => handler(ev)"
+      style="text-transform: initial"
       @click="onClick()"
     >
       <!-- Icon -->
-      <div class="flex-1 flex items-center">
+      <div class="flex-1 flex self-center items-center">
         <img :src="fileIcon" class="w-[72px] h-[72px]" />
       </div>
-      <!-- Name -->
-      <div class="flex p-2 items-center">
-        <div>{{ props.file.name }}</div>
+      <!-- Row -->
+      <div class="flex text-left p-3">
+        <!-- Name -->
+        <p class="text">
+          {{ props.file.name }} asnd adsf aksjdf laksjdf lkjslfkd jlfskj afsdfl
+          jasldkj flkajdf lksjadfl j;asldjf l;asjdfl; j
+        </p>
       </div>
     </div>
     <!-- Context -->
@@ -67,3 +72,14 @@ function onClick() {
     </ContextMenu>
   </div>
 </template>
+
+<style scoped>
+.text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* number of lines to show */
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+</style>
