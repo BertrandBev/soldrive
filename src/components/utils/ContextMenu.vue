@@ -6,7 +6,7 @@
       v-show="opened"
       @contextmenu.capture.prevent
     >
-      <ul class="menu bg-secondary text-secondary-content rounded-box">
+      <ul class="menu bg-slate-800 text-white rounded-box">
         <slot></slot>
       </ul>
     </div>
@@ -78,7 +78,7 @@ defineExpose({ open, close });
   z-index: 200;
   width: 100vw;
   height: 100vh;
-  background-color: #00000055;
+  background-color: #00000088;
   left: 0;
   top: 0;
 }

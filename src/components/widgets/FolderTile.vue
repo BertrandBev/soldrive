@@ -38,17 +38,20 @@ function onClick() {
   <div>
     <!-- Card -->
     <div
-      class="card card-bordered btn btn-ghost border-slate-500 w-[180px] h-[180px] items-center overflow-visible"
+      class="card card-bordered btn btn-ghost border-slate-500 w-full h-[180px] items-start p-0 overflow-visible"
       @contextmenu.prevent="(ev) => handler(ev)"
+      style="text-transform: initial"
       @click="onClick()"
     >
       <!-- Icon -->
-      <div class="flex-1 flex items-center">
+      <div class="flex-1 flex self-center items-center">
         <img src="../../assets/files/folder.png" class="w-[96px] h-[96px]" />
       </div>
       <!-- Name -->
-      <div class="flex p-2 items-center">
-        {{ folder.name }}
+      <div class="flex text-left p-3">
+        <p class="text">
+          {{ folder.name }}
+        </p>
       </div>
     </div>
     <!-- Context -->
@@ -62,3 +65,14 @@ function onClick() {
     </ContextMenu>
   </div>
 </template>
+
+<style scoped>
+.text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* number of lines to show */
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+</style>

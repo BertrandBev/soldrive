@@ -4,7 +4,6 @@ An on-chain cloud storage with encryption and file manager on Solana
 
 [![Made with anchor](https://img.shields.io/badge/Made%20width-anchor-purple.svg?style=flat-square)](https://github.com/coral-xyz/anchor)
 
-<!-- <img src="https://raw.githubusercontent.com/BertrandBev/soldrive/master/doc/images/demo.gif" width="100%" max-width="100px"> -->
 <div align="center">
   <img src="src/assets/logo.png" width="180" style="margin-top: 15px; margin-bottom: 15px">
 </div>

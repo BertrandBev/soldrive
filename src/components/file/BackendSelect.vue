@@ -20,7 +20,7 @@ function setBackend(backend: Backend) {
 
 <template>
   <!-- Backend -->
-  <div class="mt-2 flex items-center">
+  <div class="flex items-center">
     <span class="opacity-50">Backend</span>
     <div class="tabs tabs-boxed ml-3">
       <a

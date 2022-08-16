@@ -19,7 +19,11 @@ const router = VueRouter.createRouter({
       path: "/file",
       component: EditFile,
       props: (route) => route.query,
-      meta: { name: "File" },
+      meta: {
+        name: (route: VueRouter.RouteLocationNormalizedLoaded) => {
+          return !!route.query.id ? "Edit file" : "New file";
+        },
+      },
     },
     {
       path: "/account",

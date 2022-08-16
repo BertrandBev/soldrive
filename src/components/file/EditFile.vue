@@ -69,7 +69,6 @@ const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
       data.value.loaded = true;
       data.value.originalFile = { ...res };
       data.value.file = res;
-      console.log("loaded file", res);
     }
   },
   null,
@@ -110,8 +109,6 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
       file.value.fileExt = payload.fileExt;
       file.value.fileSize = new anchor.BN(payload.fileSize);
     }
-    console.log("PAYLOAD", payload);
-
     if (isNew.value) {
       // Create file
       const id = user.value.fileId + 1;
@@ -174,7 +171,7 @@ const updated = computed(() => {
     <Loader v-else-if="fileLoading"></Loader>
     <div v-else-if="fileLoadingError">File loading error</div>
     <!-- Card -->
-    <div v-else class="card w-full border border-info flex-col p-6">
+    <div v-else class="card w-full border border-info flex-col p-6 bg-[#00000033]">
       <div class="flex items-center">
         <!-- Name -->
         <div class="flex flex-col w-full">
@@ -192,9 +189,9 @@ const updated = computed(() => {
         <!-- Encryption -->
       </div>
       <!--  -->
-      <AccessSelect v-model="file.access"></AccessSelect>
+      <AccessSelect class="mt-4" v-model="file.access"></AccessSelect>
       <!--  -->
-      <BackendSelect v-model="file.backend"></BackendSelect>
+      <BackendSelect class="mt-4" v-model="file.backend"></BackendSelect>
       <!--  -->
       <Content
         ref="content"

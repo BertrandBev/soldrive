@@ -4,14 +4,23 @@ import { DotsHorizontalIcon } from "@heroicons/vue/solid";
 import { WalletMultiButton } from "solana-wallets-vue";
 import { useRoute, useRouter } from "vue-router";
 import AuthButton from "./AuthButton.vue";
+import { computed } from "vue";
 
 const route = useRoute();
-
 const props = defineProps<{
   onMenuClicked: () => void;
 }>();
 
-function login() {}
+const routeName = computed(() => {
+  const name = route.meta.name;
+  if (typeof name == "string") {
+    return name;
+  } else if (typeof name == "function") {
+    return name(route);
+  } else {
+    return "";
+  }
+});
 </script>
 
 <template>
@@ -31,11 +40,9 @@ function login() {}
     >
       <ChevronLeftIcon class="w-5 h-5" />
     </button>
-    <img v-else src="../assets/logo.png" width="48" height="48" />
+    <img class="ml-2" v-else src="../assets/logo.png" width="42" height="42" />
     <!-- Name -->
-    <div class="normal-case text-xl font-bold px-4">
-      {{ route.meta.name }}
-    </div>
+    <div class="normal-case text-xl font-bold px-4">{{ routeName }}</div>
     <div class="flex-1"></div>
     <div>
       <WalletMultiButton dark></WalletMultiButton>

@@ -8,6 +8,7 @@ import Loader from "../utils/Loader.vue";
 import ContextMenu from "../utils/ContextMenu.vue";
 import { useRouter, useRoute } from "vue-router";
 import { fileIcon as _fileIcon } from "../../store/fileTypes";
+import { LockClosedIcon, LockOpenIcon } from "@heroicons/vue/solid";
 
 const { api, wallet } = useChainApi();
 const { isLoggedIn } = useUserStore();
@@ -37,13 +38,21 @@ function onClick() {
   const path = route.path;
   router.push({ path, query: { file: props.file.id } });
 }
+
+const isArweave = computed(() => {
+  return props.file.backend == "arweave";
+});
+
+const isEncrypted = computed(() => {
+  return props.file.access == "private";
+});
 </script>
 
 <template>
   <div>
     <!-- File -->
     <div
-      class="card card-bordered btn btn-ghost shadow-xl border-slate-500 w-full h-[180px] items-start p-0"
+      class="card card-bordered btn btn-ghost shadow-xl border-slate-500 w-full h-[180px] items-start p-0 relative overflow-visible"
       @contextmenu.prevent="(ev) => handler(ev)"
       style="text-transform: initial"
       @click="onClick()"
@@ -52,12 +61,34 @@ function onClick() {
       <div class="flex-1 flex self-center items-center">
         <img :src="fileIcon" class="w-[72px] h-[72px]" />
       </div>
+      <!-- Tooltips -->
+      <div
+        class="absolute left-0 top-0 p-2 tooltip"
+        :data-tip="isArweave ? 'on Arweave' : 'on Solana'"
+      >
+        <img
+          v-if="isArweave"
+          class="w-[16px] h-[16px]"
+          src="../../assets/arweave-logo.png"
+        />
+        <img
+          v-else
+          class="w-[16px] h-[16px]"
+          src="../../assets/solana-logo.png"
+        />
+      </div>
+      <div class="absolute right-0 top-0 p-2 tooltip" data-tip="encrypted">
+        <LockClosedIcon
+          v-if="isEncrypted"
+          class="w-[16px] h-[16px]"
+        ></LockClosedIcon>
+        <LockOpenIcon v-else class="w-[16px] h-[16px]"></LockOpenIcon>
+      </div>
       <!-- Row -->
       <div class="flex text-left p-3">
         <!-- Name -->
         <p class="text">
-          {{ props.file.name }} asnd adsf aksjdf laksjdf lkjslfkd jlfskj afsdfl
-          jasldkj flkajdf lksjadfl j;asldjf l;asjdfl; j
+          {{ props.file.name }}
         </p>
       </div>
     </div>

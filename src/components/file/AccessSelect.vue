@@ -32,9 +32,9 @@ watch([access], () => {
 </script>
 
 <template>
-  <div class="mt-2 flex items-center">
+  <div class="flex items-center">
     <!-- Encryption -->
-    <div class="mt-2 flex items-center">
+    <div class="flex items-center">
       <span class="opacity-50">Encryption</span>
       <select v-model="access" class="select ml-1">
         <option value="private">Private (encrypted)</option>
