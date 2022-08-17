@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watchEffect, computed } from "vue";
+import { ref, watch, computed } from "vue";
 import { useWrappedApi, Folder } from "../../api/wrappedApi";
 import { useAsyncState } from "@vueuse/core";
 import * as anchor from "@project-serum/anchor";
@@ -10,7 +10,7 @@ import { useClipbardStore } from "../../store/clipboardStore";
 
 const api = useWrappedApi();
 const toast = useToast();
-const { user, fetchUser, encrypt, decrypt } = useUserStore();
+const { user, fetchUser, encrypt } = useUserStore();
 const { updateFolder } = useClipbardStore();
 
 //
@@ -32,9 +32,18 @@ const isNew = computed(() => {
 
 // Check data
 const emptyName = ref(false);
-watchEffect(() => {
-  emptyName.value = folder.value.name.length == 0;
-});
+const nameTooLong = ref(false);
+watch(
+  [folder],
+  async () => {
+    emptyName.value = folder.value.name.length == 0;
+    const enc = new TextEncoder();
+    const buf = enc.encode(folder.value.name);
+    const encryptedName = await encrypt(buf, true);
+    nameTooLong.value = encryptedName.length > 64;
+  },
+  { deep: true }
+);
 
 const modalOpen = ref(false);
 const title = computed(() => {
@@ -52,6 +61,10 @@ const { isLoading: folderSaving, execute: saveFolder } = useAsyncState(
     // Check data
     if (emptyName.value) {
       toast.error("A valid folder name must be provided");
+      return;
+    }
+    if (nameTooLong.value) {
+      toast.error("The provided name is too long");
       return;
     }
     if (isNew.value) {
@@ -100,12 +113,13 @@ defineExpose({ open });
   <div class="modal" :class="{ 'modal-open': modalOpen }">
     <div class="modal-box">
       <h3 class="font-bold text-lg">{{ title }}</h3>
+      <!-- TODO: share with editFile -->
       <input
         v-model="folder.name"
         class="input input-info input-bordered w-full mt-3"
         :class="{
-          'input-info': !emptyName,
-          'input-error': emptyName,
+          'input-info': !emptyName && !nameTooLong,
+          'input-error': emptyName || nameTooLong,
         }"
         type="text"
         placeholder="Name"

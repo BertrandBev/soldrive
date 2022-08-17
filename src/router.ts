@@ -4,8 +4,9 @@ import Home from "./components/Home.vue";
 import Account from "./components/Account.vue";
 import EditFile from "./components/file/EditFile.vue";
 import { useUserStore } from "./store/userStore";
+import { watch } from "vue";
 
-const { authState } = useUserStore();
+const { isLoggedIn } = useUserStore();
 
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
@@ -35,12 +36,6 @@ const router = VueRouter.createRouter({
       meta: { name: "Account" },
     },
   ],
-});
-
-router.beforeEach(async (to, from) => {
-  // if (to.name !== "Login") {
-  //   return { path: "/" };
-  // }
 });
 
 export function folderId(path: string[]) {

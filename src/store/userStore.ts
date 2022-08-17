@@ -1,6 +1,7 @@
 import { createGlobalState, useAsyncState } from "@vueuse/core";
 import { ref, watch, computed } from "vue";
-import { useChainApi } from "../api/chainApi";
+import { useChainApi, User } from "../api/chainApi";
+import { useRouter } from "vue-router";
 import bs58 from "bs58";
 
 const ENCRYPTION_KEY = "encryptionKey";
@@ -17,16 +18,6 @@ function createUserStore() {
 
   //
   const noUser = ref(false);
-
-  // Create user
-  const createUser = useAsyncState(
-    async () => {
-      if (!wallet.value || !api.value) return;
-      return await api.value.createUser();
-    },
-    null,
-    { immediate: false }
-  );
 
   // Get encryption key
   const fetchEncryptionKey = useAsyncState(
@@ -58,7 +49,15 @@ function createUserStore() {
   const fetchUser = useAsyncState(
     async () => {
       if (!wallet.value || !api.value) return;
-      const user = await api.value.fetchUser();
+      let user: User | undefined = undefined;
+      try {
+        user = await api.value.fetchUser();
+      } catch (e) {
+        const msg = (e as Error).message as string;
+        noUser.value = msg.includes("Account does not exist");
+        throw e;
+      }
+      noUser.value = false;
       await fetchEncryptionKey.execute(0, false);
       return user;
     },
@@ -66,16 +65,22 @@ function createUserStore() {
     { immediate: false, onError: (e) => console.error("Fetch user error", e) }
   );
 
+  // Create user
+  const createUser = useAsyncState(
+    async () => {
+      if (!wallet.value || !api.value) return;
+      await api.value.createUser();
+      await fetchUser.execute();
+    },
+    null,
+    { immediate: false, onError: (e) => console.error("Create user error") }
+  );
+
   // Automatically fetch user on wallet
   watch(
     [wallet],
     async () => {
-      if (wallet.value && api.value) {
-        await fetchUser.execute();
-        noUser.value = (
-          (fetchUser.error.value as Error) || new Error()
-        ).message.includes("Account does not exist");
-      }
+      if (wallet.value && api.value) await fetchUser.execute();
     },
     { immediate: true }
   );
@@ -137,6 +142,18 @@ function createUserStore() {
 
   const isLoggedIn = computed(() => {
     return authState.value == AuthState.LOGGED_IN;
+  });
+
+  // Automatically exit on logout
+  watch([isLoggedIn], async () => {
+    const router = useRouter();
+    if (!router || import.meta.env.DEV) return;
+    if (!isLoggedIn.value) {
+      router.push({ path: "/" });
+    } else {
+      console.log("is logged in!");
+      router.push({ path: "/explorer" });
+    }
   });
 
   return {

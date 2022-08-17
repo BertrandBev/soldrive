@@ -61,7 +61,7 @@ async function createUserFromModal() {
   await createUser.execute();
   // TODO: extract in a function
   if (createUser.error.value) {
-    console.log("Error", createUser.error.value);
+    console.log("Create user error", createUser.error.value);
     const msg = (createUser.error.value as Error).message as string;
     toast.error(msg);
   }
@@ -71,7 +71,7 @@ async function fetchEncryptionFromModal() {
   encryptionModal.value = false;
   await fetchEncryptionKey.execute();
   if (fetchEncryptionKey.error.value) {
-    console.log("Error", fetchEncryptionKey.error.value);
+    console.log("Fetch encryption error", fetchEncryptionKey.error.value);
     const msg = (fetchEncryptionKey.error.value as Error).message as string;
     toast.error(msg);
   }

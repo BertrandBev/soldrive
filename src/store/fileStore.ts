@@ -156,21 +156,20 @@ function createFileStore() {
     if (file.content.byteLength == 0) return new ArrayBuffer(0);
     // Decrypt filecontent
     const encrypted = file.access == "private";
-    const contentBuf = await decrypt(file.content, encrypted);
     // Download file if needed
     if (file.backend == "solana") {
       // Solana backend
-      return contentBuf;
+      return file.content;
     } else if (downloadLinks) {
       // Arweave backend, unpack
       const decoder = new TextDecoder();
-      const contentStr = decoder.decode(contentBuf);
+      const contentStr = decoder.decode(file.content);
       // Unpack metadata
       const meta = contentStr.split("\n");
       const id = meta[0];
       // Unpack note
       const blob = await downloadArweave(id);
-      return await decrypt(await blob.arrayBuffer(), encrypted);
+      return await decrypt(await blob.arrayBuffer(), file.access == "private");
     } else {
       return new ArrayBuffer(0);
     }

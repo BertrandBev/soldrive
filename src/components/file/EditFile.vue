@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, watchEffect, computed, onMounted, nextTick } from "vue";
-import { useChainApi, Access, Backend, File } from "../../api/chainApi";
+import { Access, Backend } from "../../api/chainApi";
+import { useWrappedApi, File } from "../../api/wrappedApi";
 import { useAsyncState, useThrottleFn } from "@vueuse/core";
 import { useRouter } from "vue-router";
 import * as anchor from "@project-serum/anchor";
@@ -14,9 +15,9 @@ import { useClipbardStore } from "../../store/clipboardStore";
 import BackendSelect from "./BackendSelect.vue";
 import AccessSelect from "./AccessSelect.vue";
 
-const { api, wallet, connection } = useChainApi();
+const api = useWrappedApi();
 const toast = useToast();
-const { user, fetchUser, isLoggedIn } = useUserStore();
+const { user, fetchUser, isLoggedIn, encrypt } = useUserStore();
 const router = useRouter();
 const { updateFile } = useClipbardStore();
 
@@ -37,7 +38,7 @@ const isNew = computed(() => {
 
 function genFile() {
   return {
-    name: Buffer.alloc(0),
+    name: "",
     parent: 0,
     access: "private" as Access,
     fileExt: "",
@@ -50,7 +51,6 @@ function genFile() {
 // File data
 const data = ref({
   loaded: false,
-  fileName: "",
   file: genFile(),
   originalFile: genFile(),
 });
@@ -59,7 +59,11 @@ const data = ref({
 const file = computed(() => data.value.file);
 
 // Get file
-const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
+const {
+  execute: loadFile,
+  isLoading: fileLoading,
+  error: fileLoadingError,
+} = useAsyncState(
   async () => {
     if (isNew.value) {
       // New file
@@ -76,18 +80,27 @@ const { isLoading: fileLoading, error: fileLoadingError } = useAsyncState(
   },
   null,
   {
+    immediate: false,
     onError: (e) => {
       console.error(e);
     },
   }
 );
 
+// Load file
+watch([fileId], () => loadFile(), { immediate: true });
+
 //
 const emptyName = ref(false);
+const nameTooLong = ref(false);
 watch(
   [file],
-  () => {
+  async () => {
     emptyName.value = file.value.name.length == 0;
+    const enc = new TextEncoder();
+    const buf = enc.encode(file.value.name);
+    const encryptedName = await encrypt(buf, true);
+    nameTooLong.value = encryptedName.length > 64;
   },
   { deep: true }
 );
@@ -105,6 +118,11 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
       toast.error("A valid file name must be provided");
       return;
     }
+    if (nameTooLong.value) {
+      toast.error("The provided name is too long");
+      return;
+    }
+
     // Retrieve content
     // Don't repace file.content in here to prevent reactive download from Content
     const payload = await content.value!.upload();
@@ -115,23 +133,21 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
     if (isNew.value) {
       // Create file
       const id = user.value.fileId + 1;
-      await api.value?.createFile(id, payload!.content.byteLength, {
+      await api.value?.createFile({
         ...file.value,
+        id,
         content: payload!.content,
       } as File);
     } else {
       //
       if (!data.value.loaded) throw new Error("File not loaded");
       // Update file
-      await api.value?.updateFile(fileId.value!, {
-        parent: file.value.parent,
-        name: file.value.name,
-        fileExt: file.value.fileExt,
-        fileSize: file.value.fileSize,
-        access: file.value.access,
-        backend: file.value.backend,
-        content: payload?.content,
-      });
+      const id = await api.value!.updateFile(
+        file.value,
+        payload?.content,
+        data.value.originalFile
+      );
+      file.value.id = id;
     }
     // Update clipboard
     updateFile(data.value.originalFile, file.value);
@@ -180,19 +196,19 @@ const updated = computed(() => {
     >
       <div class="flex items-center">
         <!-- Name -->
+        <!-- TODO: share with editFolderModal -->
         <div class="flex flex-col w-full">
           <input
             v-model="file.name"
             class="input input-info input-bordered w-full"
             :class="{
-              'input-info': !emptyName,
-              'input-error': emptyName,
+              'input-info': !emptyName && !nameTooLong,
+              'input-error': emptyName || nameTooLong,
             }"
             type="text"
             placeholder="Name"
           />
         </div>
-        <!-- Encryption -->
       </div>
       <!--  -->
       <AccessSelect class="mt-4" v-model="file.access"></AccessSelect>

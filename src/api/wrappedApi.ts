@@ -142,20 +142,27 @@ function createWrappedApi() {
 
     async function updateFile(
       file: File,
-      content?: Buffer,
+      content?: ArrayBuffer,
       currentFile?: File,
       user?: solApi.User
     ) {
+      if (content) file.content = content;
       const fileEnc = await encryptFile(file);
       const currentEnc = currentFile
         ? await encryptFile(currentFile)
         : undefined;
-      return api.updateFile(fileEnc, content, currentEnc, user);
+      return api.updateFile(
+        fileEnc,
+        content ? fileEnc.content : undefined,
+        currentEnc,
+        user
+      );
     }
 
     // Combined
-    async function fetchChildren(id: number) {
-      const rtn = await api.fetchChildren(id);
+    async function fetchChildren(id: number, withContent: boolean) {
+      const rtn = await api.fetchChildren(id, withContent);
+      console.log("rtn", rtn);
       const folders = await Promise.all(
         rtn.folders.map((f) => decryptFolder(f.account))
       );

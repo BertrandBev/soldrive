@@ -59,8 +59,8 @@ const {
     forceDownload = forceDownload || props.originalFile.fileExt == "txt";
     const buf = await downloadFile(props.originalFile, forceDownload);
     // Unpack note
-    if (isNote.value) {
-      note.value = decoder.decode(buf!);
+    if (isNote.value && buf) {
+      note.value = decoder.decode(buf);
     }
     // Return buffer
     return buf;
@@ -155,7 +155,7 @@ const {
   error: uploadError,
 } = useAsyncState(
   async () => {
-    let content: Buffer | null = null;
+    let content: ArrayBuffer | null = null;
 
     // Conditions for content update
     const updateContent = updated.value || props.isNew;
@@ -174,11 +174,8 @@ const {
       throw new Error(isNote.value ? "Empty note" : "Select a valid file");
     }
 
-    // Encrypt
-    const encrypted = await encrypt(data.value, isEncrypted.value);
-    const size = encrypted.byteLength;
-
     // Set content
+    const size = data.value.byteLength;
     if (!isSolana.value) {
       // Arweave backend, get balance
       const balance = await getBalance();
@@ -186,14 +183,14 @@ const {
       if (balance.comparedTo(cost) <= 0)
         await depositModal.value?.open(size / 1e6);
       // Upload file
+      const encrypted = await encrypt(data.value, isEncrypted.value);
       const id = await uploadFile(encrypted);
       // Pack file metadata
       const contentStr = [id].join("\n");
-      const contentBuf = encoder.encode(contentStr);
-      content = await encrypt(contentBuf, isEncrypted.value);
+      content = encoder.encode(contentStr);
     } else {
       // Solana backend
-      content = encrypted;
+      content = data.value;
     }
 
     // Return content

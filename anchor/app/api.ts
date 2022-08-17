@@ -134,7 +134,6 @@ export function getAPI(
 
   async function fetchFile(id: number, withContent = false): Promise<File> {
     const pda = await getFilePda(id);
-    // TODO: Remove content fetching here if needed
     const accountInfo = await program.account.file.getAccountInfo(
       pda.publicKey
     );
@@ -226,6 +225,7 @@ export function getAPI(
   ) {
     const userPda = await getUserPda();
     const filePda = await getFilePda(file.id);
+    console.log("create file", file);
     const builder = program.methods
       .createFile(
         maxSize,

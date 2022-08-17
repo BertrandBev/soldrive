@@ -18,7 +18,7 @@ const {} = useFileStore();
 </script>
 
 <template>
-  <div class="w-full h-full flex flex-col items-start p-2">
+  <div class="w-full h-full flex flex-col items-start p-8">
     <!-- Header -->
     <div class="flex items-center p-6 self-center">
       <img src="../assets/logo.png" width="64" height="64" />
