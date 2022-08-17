@@ -1,14 +1,21 @@
 [features]
 seeds = false
 skip-lint = false
+
 [programs.localnet]
+soldrive = "5QEzcF7HPx6z3oN4Fu8cqxGr99oUEGS4uE4MrazyjstF"
+
+[programs.devnet]
+soldrive = "5QEzcF7HPx6z3oN4Fu8cqxGr99oUEGS4uE4MrazyjstF"
+
+[programs.mainnet]
 soldrive = "5QEzcF7HPx6z3oN4Fu8cqxGr99oUEGS4uE4MrazyjstF"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "/Users/bbev/.config/solana/id.json"
 
 [scripts]

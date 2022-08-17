@@ -1,5 +1,5 @@
 import { ref, computed, watch, Ref } from "vue";
-import { useWallet, AnchorWallet } from "solana-wallets-vue";
+import { useWallet, AnchorWallet, initWallet } from "solana-wallets-vue";
 import { BaseSolletWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { AnchorProvider, Program } from "@project-serum/anchor";
@@ -7,6 +7,12 @@ import { createGlobalState } from "@vueuse/core";
 import nacl from "tweetnacl";
 import * as anchor from "@project-serum/anchor";
 import web3 = anchor.web3;
+import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import {
+  PhantomWalletAdapter,
+  SlopeWalletAdapter,
+  SolflareWalletAdapter,
+} from "@solana/wallet-adapter-wallets";
 
 // Buffer polyfill
 import { Buffer } from "buffer";
@@ -21,8 +27,15 @@ import { createCache } from "./cache";
 const address = "5QEzcF7HPx6z3oN4Fu8cqxGr99oUEGS4uE4MrazyjstF";
 
 // Config
-const LOCAL_WALLET = import.meta.env.DEV && true;
-const LOCAL_CLUSTER = import.meta.env.DEV && true;
+export type Cluster = "mainnet" | "devnet" | "localnet";
+const cluster: Cluster = "devnet";
+const clusterUrl = {
+  mainnet: web3.clusterApiUrl("mainnet-beta", false),
+  devnet: web3.clusterApiUrl("devnet", false),
+  localnet: "http://127.0.0.1:8899",
+}[cluster];
+
+const LOCAL_WALLET = import.meta.env.DEV && false;
 const AIRDROP = import.meta.env.DEV && true;
 
 // Config
@@ -30,9 +43,6 @@ const AIRDROP_LAMPORTS = 1e9;
 import id from "/Users/bbev/.config/solana/id.json";
 const keypair = web3.Keypair.fromSecretKey(Uint8Array.from(id as number[]));
 
-const clusterUrl = LOCAL_CLUSTER
-  ? "http://127.0.0.1:8899"
-  : web3.clusterApiUrl("mainnet-beta", false);
 const preflightCommitment = "processed";
 const commitment = "processed";
 const programID = new PublicKey(address);
@@ -42,6 +52,17 @@ export type Keyed<T> = solApi.Keyed<T>;
 export type User = solApi.User;
 export type Access = solApi.Access;
 export type Backend = solApi.Backend;
+
+// Init wallet store
+const walletOptions = {
+  wallets: [
+    new PhantomWalletAdapter(),
+    new SlopeWalletAdapter(),
+    new SolflareWalletAdapter({ network: WalletAdapterNetwork.Devnet }),
+  ],
+  autoConnect: true,
+};
+initWallet(walletOptions);
 
 export function useAnchorWallet() {
   // Overrides useAnchorWallet.ts with signMessage

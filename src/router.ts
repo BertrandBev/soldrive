@@ -8,14 +8,30 @@ import { watch } from "vue";
 
 const { isLoggedIn } = useUserStore();
 
+type NameLoader = (route: VueRouter.RouteLocationNormalizedLoaded) => string;
+type Meta = {
+  name: string | NameLoader;
+  noLogin?: boolean;
+  showLogo?: boolean;
+  showBack?: boolean;
+};
+
 const router = VueRouter.createRouter({
   history: VueRouter.createWebHashHistory(),
   routes: [
-    { path: "/", component: About, meta: { name: "Soldrive", noLogin: true } },
+    {
+      path: "/",
+      component: About,
+      meta: {
+        name: "Soldrive",
+        noLogin: true,
+        showLogo: true,
+      } as Meta,
+    },
     {
       path: "/explorer/:path(.*)*",
       component: Home,
-      meta: { name: "SolDrive", hideBack: true },
+      meta: { name: "SolDrive", showBack: true } as Meta,
       props: (route) => {
         return { ...route.query, ...route.params };
       },
@@ -28,12 +44,13 @@ const router = VueRouter.createRouter({
         name: (route: VueRouter.RouteLocationNormalizedLoaded) => {
           return !!route.query.id ? "Edit file" : "New file";
         },
-      },
+        showBack: true,
+      } as Meta,
     },
     {
       path: "/account",
       component: Account,
-      meta: { name: "Account" },
+      meta: { name: "Account", showBack: true, a: 1 } as Meta,
     },
   ],
 });

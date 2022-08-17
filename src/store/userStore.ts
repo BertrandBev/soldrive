@@ -1,12 +1,13 @@
 import { createGlobalState, useAsyncState } from "@vueuse/core";
 import { ref, watch, computed } from "vue";
 import { useChainApi, User } from "../api/chainApi";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import bs58 from "bs58";
 
 const ENCRYPTION_KEY = "encryptionKey";
 
 export enum AuthState {
+  NO_WALLET,
   NO_USER,
   LOGGED_OUT,
   NO_ENCRYPTION,
@@ -134,6 +135,7 @@ function createUserStore() {
   }
 
   const authState = computed(() => {
+    if (!wallet.value) return AuthState.NO_WALLET;
     if (noUser.value) return AuthState.NO_USER;
     else if (!fetchUser.state.value) return AuthState.LOGGED_OUT;
     else if (!fetchEncryptionKey.state.value) return AuthState.NO_ENCRYPTION;
@@ -142,18 +144,6 @@ function createUserStore() {
 
   const isLoggedIn = computed(() => {
     return authState.value == AuthState.LOGGED_IN;
-  });
-
-  // Automatically exit on logout
-  watch([isLoggedIn], async () => {
-    const router = useRouter();
-    if (!router || import.meta.env.DEV) return;
-    if (!isLoggedIn.value) {
-      router.push({ path: "/" });
-    } else {
-      console.log("is logged in!");
-      router.push({ path: "/explorer" });
-    }
   });
 
   return {

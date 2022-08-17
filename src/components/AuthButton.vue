@@ -7,12 +7,14 @@ import {
 } from "@heroicons/vue/outline";
 import { useRoute } from "vue-router";
 import { useUserStore, AuthState } from "../store/userStore";
-import { ref, computed, watchEffect } from "vue";
+import { ref, computed, watch } from "vue";
 import { useToast } from "vue-toastification";
 import { useRouter } from "vue-router";
 
 const toast = useToast();
 const router = useRouter();
+const route = useRoute();
+
 const { user, noUser, createUser, fetchUser, fetchEncryptionKey, authState } =
   useUserStore();
 
@@ -24,6 +26,27 @@ const isLoading = computed(
     createUser.isLoading.value ||
     fetchUser.isLoading.value ||
     fetchEncryptionKey.isLoading.value
+);
+
+// Control flow
+watch(
+  [authState],
+  () => {
+    if (authState.value == AuthState.NO_USER && !fetchUser.isLoading.value) {
+      // Create user
+      createUserModal.value = true;
+    } else if (
+      authState.value == AuthState.NO_ENCRYPTION &&
+      !fetchUser.isLoading.value
+    ) {
+      // Create key
+      encryptionModal.value = true;
+    } else if (authState.value == AuthState.LOGGED_IN && route.path == "/") {
+      // Auto nav to explorer
+      router.push({ path: "/explorer" });
+    }
+  },
+  { immediate: true }
 );
 
 const authStr = computed(() => {
@@ -82,6 +105,7 @@ async function fetchEncryptionFromModal() {
   <div>
     <!-- Auth button -->
     <button
+      v-if="authState != AuthState.NO_WALLET"
       class="btn btn-ghost gap-2 ml-2"
       :class="{ loading: isLoading }"
       @click="auth"

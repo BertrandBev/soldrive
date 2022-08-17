@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { MenuIcon, ChevronLeftIcon, LoginIcon } from "@heroicons/vue/outline";
 import { DotsHorizontalIcon } from "@heroicons/vue/solid";
+import { useChainApi } from "../api/chainApi";
 import { WalletMultiButton } from "solana-wallets-vue";
 import { useRoute, useRouter } from "vue-router";
 import AuthButton from "./AuthButton.vue";
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
+import ClusterButton from "./ClusterButton.vue";
 
 const route = useRoute();
+const router = useRouter();
 const props = defineProps<{
   onMenuClicked: () => void;
 }>();
@@ -21,6 +24,19 @@ const routeName = computed(() => {
     return "";
   }
 });
+
+const hasBack = ref(false);
+watch(
+  [route],
+  () => {
+    hasBack.value = window.history.length > 1;
+    // console.log("hasback", window.history);
+  },
+  {
+    immediate: true,
+    deep: true,
+  }
+);
 </script>
 
 <template>
@@ -34,16 +50,24 @@ const routeName = computed(() => {
     </button>
     <!-- Back button -->
     <button
-      v-if="!route.meta.hideBack"
+      v-if="route.meta.showBack"
       class="btn btn-square btn-ghost"
       @click="() => $router.back()"
     >
       <ChevronLeftIcon class="w-5 h-5" />
     </button>
-    <img class="ml-2" v-else src="../assets/logo.png" width="42" height="42" />
+    <img
+      class="ml-2"
+      v-else-if="route.meta.showLogo"
+      src="../assets/logo.png"
+      width="42"
+      height="42"
+    />
     <!-- Name -->
     <div class="normal-case text-xl font-bold px-4">{{ routeName }}</div>
     <div class="flex-1"></div>
+    <!-- Buttons -->
+    <ClusterButton></ClusterButton>
     <div>
       <WalletMultiButton dark></WalletMultiButton>
     </div>
