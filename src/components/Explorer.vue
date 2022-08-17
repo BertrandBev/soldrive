@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useAsyncState } from "@vueuse/core";
-import { useChainApi, Folder, File } from "../api/chain-api";
+import { useWrappedApi, Folder, File } from "../api/wrappedApi";
 import { useUserStore } from "../store/userStore";
 
 import { ref, watch, watchEffect, onMounted, computed } from "vue";
@@ -16,7 +16,7 @@ import PathBar from "./widgets/PathBar.vue";
 import RemoveModal from "./widgets/RemoveModal.vue";
 import Viewer from "./viewer/Viewer.vue";
 
-const { api, wallet } = useChainApi();
+const api = useWrappedApi();
 const { isLoggedIn } = useUserStore();
 const router = useRouter();
 const editFolderModal = ref<null | InstanceType<typeof EditFolderModal>>(null);
@@ -34,7 +34,7 @@ const fetchChildren = useAsyncState(
   async () => {
     if (!api.value) return;
     const folder = folderId(props.path);
-    return await api.value.fetchChildren(folder, true);
+    return await api.value.fetchChildren(folder);
   },
   null,
   {
@@ -113,17 +113,17 @@ defineExpose({ editFolder, removeFolder, loadChildren });
       <FolderTile
         v-for="folder in folders"
         :path="path"
-        :folder="folder.account"
-        :onEdit="() => editFolder(folder.account)"
-        :onRemove="() => removeFolder(folder.account)"
+        :folder="folder"
+        :onEdit="() => editFolder(folder)"
+        :onRemove="() => removeFolder(folder)"
       >
       </FolderTile>
       <!-- File -->
       <FileTile
         v-for="file in files"
-        :file="file.account"
-        :onEdit="() => editFile(file.account)"
-        :onRemove="() => removeFile(file.account)"
+        :file="file"
+        :onEdit="() => editFile(file)"
+        :onRemove="() => removeFile(file)"
       >
       </FileTile>
     </div>
@@ -139,7 +139,7 @@ defineExpose({ editFolder, removeFolder, loadChildren });
       v-if="files"
       :onEdit="editFile"
       :onRemove="removeFile"
-      :files="files.map((f) => f.account)"
+      :files="files.map((f) => f)"
       :fileId="props.file"
     ></Viewer>
   </div>

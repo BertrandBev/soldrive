@@ -24,13 +24,16 @@ function u32Bytes(num: number) {
 // Extract types
 const typeProg = null as Program<Soldrive>;
 export type User = Awaited<ReturnType<typeof typeProg.account.user.fetch>>;
-export type Folder = Awaited<ReturnType<typeof typeProg.account.folder.fetch>>;
 type FileRaw = Awaited<ReturnType<typeof typeProg.account.file.fetch>>;
+type FolderRaw = Awaited<ReturnType<typeof typeProg.account.folder.fetch>>;
 export type File = FileRaw & {
   name: Buffer;
   content: Buffer;
   access: Access;
   backend: Backend;
+};
+export type Folder = FolderRaw & {
+  name: Buffer;
 };
 
 export type Access = "private" | "publicRead" | "publicReadWrite";
@@ -82,13 +85,14 @@ export function getAPI(
 
   async function fetchFolder(id: number): Promise<Folder> {
     const pda = await getFolderPda(id);
-    return program.account.folder.fetch(pda.publicKey);
+    return program.account.folder.fetch(pda.publicKey) as Promise<Folder>;
   }
 
   async function fetchFolders(
     ids: number[] | undefined
   ): Promise<Keyed<Folder>[]> {
-    if (ids == undefined) return program.account.folder.all();
+    if (ids == undefined)
+      return program.account.folder.all() as Promise<Keyed<Folder>[]>;
     else {
       const pdas = await Promise.all(ids.map((id) => getFolderPda(id)));
       const addresses = pdas.map((pda) => pda.publicKey);
@@ -128,16 +132,13 @@ export function getAPI(
     return decoded;
   }
 
-  async function fetchFile(
-    id: number,
-    withContent = false
-  ): Promise<File | null> {
+  async function fetchFile(id: number, withContent = false): Promise<File> {
     const pda = await getFilePda(id);
     // TODO: Remove content fetching here if needed
     const accountInfo = await program.account.file.getAccountInfo(
       pda.publicKey
     );
-    return accountInfo ? decodeFileAccount(accountInfo, withContent) : null;
+    return decodeFileAccount(accountInfo, withContent);
   }
 
   async function fetchFiles(
@@ -160,10 +161,7 @@ export function getAPI(
     });
   }
 
-  async function fetchChildren(
-    id: number,
-    withContent = false
-  ): Promise<{ folders: Keyed<Folder>[]; files: Keyed<File>[] }> {
+  async function fetchChildren(id: number, withContent = false) {
     const folderPromise = program.account.folder.all([
       {
         memcmp: {
@@ -184,7 +182,7 @@ export function getAPI(
       withContent
     );
     const res = await Promise.all([folderPromise, filePromise]);
-    return { folders: res[0], files: res[1] };
+    return { folders: res[0] as Keyed<Folder>[], files: res[1] };
   }
 
   // Create
@@ -203,15 +201,13 @@ export function getAPI(
   }
 
   async function createFolder(
-    id: number,
-    parent: number,
-    name: Buffer,
+    folder: Folder,
     signers: web3.Keypair[] = defaultSigners
   ) {
     const userPda = await getUserPda();
-    const folderPda = await getFolderPda(id);
+    const folderPda = await getFolderPda(folder.id);
     await program.methods
-      .createFolder(parent, name)
+      .createFolder(folder.parent, folder.name)
       .accounts({
         folder: folderPda.publicKey,
         user: userPda.publicKey,
@@ -223,14 +219,13 @@ export function getAPI(
   }
 
   async function createFile(
-    id: number,
-    maxSize: number,
     file: File,
+    maxSize: number,
     execute: boolean = true,
     signers: web3.Keypair[] = defaultSigners
   ) {
     const userPda = await getUserPda();
-    const filePda = await getFilePda(id);
+    const filePda = await getFilePda(file.id);
     const builder = program.methods
       .createFile(
         maxSize,
@@ -254,14 +249,12 @@ export function getAPI(
   }
 
   async function updateFolder(
-    id: number,
-    parent?: number,
-    name?: Buffer,
+    folder: Folder,
     signers: web3.Keypair[] = defaultSigners
   ) {
-    const folderPda = await getFolderPda(id);
+    const folderPda = await getFolderPda(folder.id);
     await program.methods
-      .updateFolder(id, parent, name)
+      .updateFolder(folder.id, folder.parent, folder.name)
       .accounts({
         folder: folderPda.publicKey,
         authority: authority,
@@ -271,34 +264,27 @@ export function getAPI(
   }
 
   async function updateFile(
-    id: number,
-    updates: {
-      parent?: number;
-      name?: Buffer;
-      fileExt?: string;
-      fileSize?: anchor.BN;
-      access?: Access;
-      backend?: Backend;
-      content?: Buffer;
-    },
+    file: File,
+    content?: Buffer, // Optional content to prevent costly tx for large files
     currentFile?: File,
     user?: User,
     signers: web3.Keypair[] = defaultSigners
   ): Promise<number> {
+    const id = file.id;
     const filePda = await getFilePda(id);
     // Check if the current file has enough space
     if (!currentFile) currentFile = await fetchFile(id);
-    if (currentFile.maxSize < updates.content?.byteLength || 0) {
+    if (currentFile.maxSize < content?.byteLength || 0) {
       // File needs re-creation
       if (!user) user = await fetchUser();
       const removeTx = await removeFile(id, false, signers);
       const createTx = await createFile(
-        user.fileId + 1,
-        updates.content!.byteLength,
         {
-          ...currentFile,
-          ...updates,
+          ...file,
+          content,
+          id: user.fileId + 1,
         },
+        content!.byteLength,
         false,
         signers
       );
@@ -306,18 +292,16 @@ export function getAPI(
       return user.fileId + 1;
     } else {
       // Update file
-      const accessEnum = updates.access ? { [updates.access]: {} } : null;
-      const backendEnum = updates.backend ? { [updates.backend]: {} } : null;
       await program.methods
         .updateFile(
           id,
-          updates.parent || null,
-          updates.name || null,
-          updates.fileExt || null,
-          updates.fileSize || null,
-          accessEnum,
-          backendEnum,
-          updates.content || null
+          file.parent,
+          file.name,
+          file.fileExt,
+          file.fileSize,
+          { [file.access]: {} },
+          { [file.backend]: {} },
+          content || null
         )
         .accounts({
           file: filePda.publicKey,
@@ -428,24 +412,24 @@ export function getAPI(
     getUserPda,
     getFolderPda,
     getFilePda,
-    // Fetch
+    // User
+    createUser,
     fetchUser,
+    // Folder
     fetchFolder,
     fetchFolders,
+    createFolder,
+    updateFolder,
+    removeFolder,
+    // File
     fetchFile,
     fetchFiles,
-    fetchChildren,
-    // Create
-    createUser,
-    createFolder,
     createFile,
-    // Update
-    updateFolder,
     updateFile,
-    updateParent,
-    // Remove
-    removeFolder,
     removeFile,
+    // Combined
+    fetchChildren,
+    updateParent,
     // Utils
     getSignTransaction,
   };

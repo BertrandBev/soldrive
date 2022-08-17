@@ -6,7 +6,7 @@ import { ref, onMounted, watch } from "vue";
 import BigNumber from "bignumber.js";
 import DepositModal from "./DepositModal.vue";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { useAnchorWallet } from "../../api/chain-api";
+import { useAnchorWallet } from "../../api/chainApi";
 import { InformationCircleIcon } from "@heroicons/vue/outline";
 const modalOpen = ref(false);
 const infoModalOpen = ref(false);

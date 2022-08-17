@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watchEffect, computed } from "vue";
-import { useChainApi, Access, Folder } from "../../api/chain-api";
+import { useWrappedApi, Folder } from "../../api/wrappedApi";
 import { useAsyncState } from "@vueuse/core";
 import * as anchor from "@project-serum/anchor";
 import { useToast } from "vue-toastification";
@@ -8,7 +8,7 @@ import web3 = anchor.web3;
 import { useUserStore } from "../../store/userStore";
 import { useClipbardStore } from "../../store/clipboardStore";
 
-const { api, wallet, connection } = useChainApi();
+const api = useWrappedApi();
 const toast = useToast();
 const { user, fetchUser, encrypt, decrypt } = useUserStore();
 const { updateFolder } = useClipbardStore();
@@ -57,16 +57,12 @@ const { isLoading: folderSaving, execute: saveFolder } = useAsyncState(
     if (isNew.value) {
       // Create folder
       const id = user.value.folderId + 1;
-      await api.value?.createFolder(id, folder.value.parent, folder.value.name);
+      await api.value?.createFolder({ ...folder.value, id });
       // Bump id
       await fetchUser.execute();
     } else {
       // Update folder
-      await api.value?.updateFolder(
-        folder.value.id,
-        folder.value.parent,
-        folder.value.name
-      );
+      await api.value?.updateFolder(folder.value);
       // Update clipboard
       updateFolder(data.value.originalFolder!, folder.value);
     }

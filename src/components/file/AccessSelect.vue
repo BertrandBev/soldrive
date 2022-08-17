@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Access } from "../../api/chain-api";
+import { Access } from "../../api/chainApi";
 import { ref, watch } from "vue";
 import { InformationCircleIcon } from "@heroicons/vue/outline";
 import { LockClosedIcon, LockOpenIcon } from "@heroicons/vue/solid";

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, watchEffect, computed, onMounted, nextTick } from "vue";
-import { useChainApi, Access, Backend, File } from "../../api/chain-api";
+import { useChainApi, Access, Backend, File } from "../../api/chainApi";
 import { useAsyncState, useThrottleFn } from "@vueuse/core";
 import { useRouter } from "vue-router";
 import * as anchor from "@project-serum/anchor";

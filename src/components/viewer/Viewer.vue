@@ -14,7 +14,7 @@ import { ref, watch, computed, Ref } from "vue";
 import { useAsyncState } from "@vueuse/core";
 import ImageViewer from "./ImageViewer.vue";
 import VideoViewer from "./VideoViewer.vue";
-import { File } from "../../api/chain-api";
+import { File } from "../../api/chainApi";
 import { useFileStore } from "../../store/fileStore";
 import {
   fileIcon as _fileIcon,

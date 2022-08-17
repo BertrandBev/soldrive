@@ -3,8 +3,8 @@ import {
   useChainApi,
   useAnchorWallet,
   useAnchorProvider,
-  File,
-} from "../api/chain-api";
+} from "../api/chainApi";
+import { File } from "../api/wrappedApi";
 import { createGlobalState } from "@vueuse/core";
 import { watch, ref } from "vue";
 import { Connection, Transaction } from "@solana/web3.js";

@@ -1,14 +1,13 @@
 import { createGlobalState, useAsyncState } from "@vueuse/core";
 import { ref, computed } from "vue";
-import { File, Folder } from "../api/chain-api";
-import { useChainApi } from "../api/chain-api";
+import { File, Folder, useWrappedApi } from "../api/wrappedApi";
 import { fileIcon } from "../store/fileTypes";
 import folderIcon from "../assets/files/folder.png";
 
 type Item = { type: "file" | "folder"; id: number; name: string; icon: string };
 
 function createClipboardStore() {
-  const { api } = useChainApi();
+  const api = useWrappedApi();
   const items = ref<Item[]>([]);
 
   const isEmpty = computed(() => {

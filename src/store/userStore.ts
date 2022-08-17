@@ -1,6 +1,6 @@
 import { createGlobalState, useAsyncState } from "@vueuse/core";
 import { ref, watchEffect, computed } from "vue";
-import { useChainApi } from "../api/chain-api";
+import { useChainApi } from "../api/chainApi";
 import bs58 from "bs58";
 
 const ENCRYPTION_KEY = "encryptionKey";

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, watchEffect, computed, onMounted } from "vue";
-import { useChainApi, Access, Backend, File } from "../../api/chain-api";
+import { File } from "../../api/wrappedApi";
 import { useUserStore } from "../../store/userStore";
 import { useToast } from "vue-toastification";
 import Dropzone from "../file/Dropzone.vue";

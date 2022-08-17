@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useAsyncState } from "@vueuse/core";
-import { useChainApi, Folder } from "../../api/chain-api";
+import { useChainApi, Folder } from "../../api/chainApi";
 import { useUserStore } from "../../store/userStore";
 import { useRouter, useRoute } from "vue-router";
 

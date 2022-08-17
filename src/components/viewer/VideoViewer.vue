@@ -5,7 +5,7 @@ import link from "../../assets/ZZ Top - Gimme All Your Lovin (Official Music Vid
 import "vue-plyr/dist/vue-plyr.css";
 import { watch, computed } from "vue";
 import { fileType } from "../../store/fileTypes";
-import { File } from "../../api/chain-api";
+import { File } from "../../api/wrappedApi";
 
 const props = defineProps<{
   file?: File | null;

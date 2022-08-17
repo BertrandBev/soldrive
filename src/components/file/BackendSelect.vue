@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Backend } from "../../api/chain-api";
+import { Backend } from "../../api/chainApi";
 import { ref } from "vue";
 import { InformationCircleIcon } from "@heroicons/vue/outline";
 

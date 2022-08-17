@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import { useChainApi, File } from "../../api/chain-api";
-import { useUserStore } from "../../store/userStore";
+import { File } from "../../api/wrappedApi";
 
-import { ref, watchEffect, onMounted, computed } from "vue";
-import Loader from "../utils/Loader.vue";
+import { ref, computed } from "vue";
 import ContextMenu from "../utils/ContextMenu.vue";
 import { useRouter, useRoute } from "vue-router";
 import { fileIcon as _fileIcon } from "../../store/fileTypes";
 import { LockClosedIcon, LockOpenIcon } from "@heroicons/vue/solid";
 import { useClipbardStore } from "../../store/clipboardStore";
 
-const { api, wallet } = useChainApi();
-const { isLoggedIn } = useUserStore();
 const router = useRouter();
 const route = useRoute();
 const { pushFile, hasFile } = useClipbardStore();

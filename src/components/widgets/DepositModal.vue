@@ -5,7 +5,7 @@ import { useToast } from "vue-toastification";
 import { ref, onMounted, watch, computed } from "vue";
 import BigNumber from "bignumber.js";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { useAnchorWallet } from "../../api/chain-api";
+import { useAnchorWallet } from "../../api/chainApi";
 
 const {
   deposit,

@@ -72,7 +72,7 @@ describe("soldrive", () => {
   it("create folder", async () => {
     const id = 1;
     const name = "folder";
-    await createFolder(id, 0, Buffer.from(name));
+    await createFolder({ id, parent: 0, name: Buffer.from(name) } as Folder);
     const folder = await fetchFolder(id);
     assert.equal(folder.id, id);
     assert.equal(folder.parent, 0);
@@ -84,12 +84,10 @@ describe("soldrive", () => {
 
   it("update folder", async () => {
     const id = 1;
-    await updateFolder(id, 1, null);
-    let folder = await fetchFolder(id);
-    assert.equal(folder.parent, 1);
     const name = "folder_1";
-    await updateFolder(id, null, Buffer.from(name));
-    folder = await fetchFolder(id);
+    await updateFolder({ id, parent: 2, name: Buffer.from(name) } as Folder);
+    let folder = await fetchFolder(id);
+    assert.equal(folder.parent, 2);
     assert.equal(folder.name.toString(), Buffer.from("folder_1"));
   });
 
@@ -99,15 +97,19 @@ describe("soldrive", () => {
     const name = "my file";
     const content = Buffer.from("some content");
     const maxSize = 2 * content.length;
-    await createFile(id, maxSize, {
-      parent,
-      name: Buffer.from(name),
-      fileExt: "txt",
-      fileSize: new anchor.BN(content.length),
-      backend: "solana",
-      access: "private",
-      content,
-    } as File);
+    await createFile(
+      {
+        id,
+        parent,
+        name: Buffer.from(name),
+        fileExt: "txt",
+        fileSize: new anchor.BN(content.length),
+        backend: "solana",
+        access: "private",
+        content,
+      } as File,
+      maxSize
+    );
     const file = await fetchFile(id, true);
     assert.equal(file.id, id);
     assert.equal(file.parent, parent);
@@ -128,14 +130,20 @@ describe("soldrive", () => {
 
   it("updates file", async () => {
     let id = 1;
+    let currentFile = await fetchFile(id, true);
     const parent = 2;
     const name = "my file 2";
     let content = Buffer.from("some content" + "some content"); // Up to 2x the size
-    id = await updateFile(id, { parent });
-    id = await updateFile(id, { name: Buffer.from(name) });
-    id = await updateFile(id, { access: "publicRead" });
-    id = await updateFile(id, { backend: "arweave" });
-    id = await updateFile(id, { content: Buffer.from(content) });
+    id = await updateFile(
+      {
+        ...currentFile,
+        parent,
+        name: Buffer.from(name),
+        access: "publicRead",
+        backend: "arweave",
+      } as File,
+      content
+    );
     assert.equal(id, 1);
 
     let file = await fetchFile(id, true);
@@ -149,7 +157,7 @@ describe("soldrive", () => {
 
     // Now overflow content
     content = Buffer.from("some content" + "some contents");
-    id = await updateFile(id, { content: Buffer.from(content) });
+    id = await updateFile(file, content);
     file = await fetchFile(id, true);
     assert.equal(id, 2);
     assert.equal(file.id, id);
@@ -167,15 +175,19 @@ describe("soldrive", () => {
     const name = "second file";
     const content = Buffer.from("some content");
     const maxSize = 2 * content.length;
-    await createFile(id, maxSize, {
-      parent,
-      name: Buffer.from(name),
-      fileExt: "txt",
-      fileSize: new anchor.BN(content.length),
-      access: "private",
-      backend: "solana",
-      content: Buffer.from(content),
-    } as File);
+    await createFile(
+      {
+        id,
+        parent,
+        name: Buffer.from(name),
+        fileExt: "txt",
+        fileSize: new anchor.BN(content.length),
+        access: "private",
+        backend: "solana",
+        content: Buffer.from(content),
+      } as File,
+      maxSize
+    );
 
     // Now update parents
     await updateParent([2, 3], [], 2);

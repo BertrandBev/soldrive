@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useChainApi, Folder, File } from "../../api/chain-api";
+import { useWrappedApi, Folder, File } from "../../api/wrappedApi";
 import { useAsyncState } from "@vueuse/core";
 import * as anchor from "@project-serum/anchor";
 import { useToast } from "vue-toastification";
 import { useClipbardStore } from "../../store/clipboardStore";
 import web3 = anchor.web3;
 
-const { api, wallet, connection } = useChainApi();
+const api = useWrappedApi();
 const toast = useToast();
 const { popFile, popFolder } = useClipbardStore();
 

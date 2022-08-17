@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useAsyncState } from "@vueuse/core";
-import { useChainApi, Folder } from "../../api/chain-api";
+import { useWrappedApi, Folder } from "../../api/wrappedApi";
 import { useUserStore } from "../../store/userStore";
 import { useRoute, useRouter } from "vue-router";
 import { computed, watchEffect, watch } from "vue";
@@ -10,7 +10,7 @@ const route = useRoute();
 const router = useRouter();
 
 // File icons
-const { api, wallet } = useChainApi();
+const api = useWrappedApi();
 const { isLoggedIn } = useUserStore();
 
 const props = defineProps<{
@@ -31,8 +31,7 @@ const {
 } = useAsyncState(
   async () => {
     if (!api.value || parsed.value == undefined) return [];
-    let rtn = await api.value.fetchFolders(parsed.value);
-    const folders = rtn.map((folder) => folder.account);
+    let folders = await api.value.fetchFolders(parsed.value);
     const root = { id: 0, name: "Root" } as Folder;
     return [root, ...folders];
   },
