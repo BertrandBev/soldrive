@@ -14,6 +14,7 @@ function onMenuClicked() {
 <template>
   <div class="drawer drawer-mobile h-screen" id="app">
     <input ref="drawer" id="drawer" type="checkbox" class="drawer-toggle" />
+    <Drawer />
     <div class="drawer-content flex flex-col h-full">
       <NavBar :onMenuClicked="onMenuClicked" />
       <div class="w-full h-full">
@@ -22,7 +23,6 @@ function onMenuClicked() {
         </div>
       </div>
     </div>
-    <Drawer />
   </div>
 </template>
 

@@ -38,7 +38,7 @@ import Blocks from "./about/Blocks.vue";
         <div class="text-3xl">Backends</div>
         <div class="mt-5">
           Files and notes can be stored both on-chain directly Solana Accounts,
-          or on Arweave, a specialized file chain, to drastically reduce the
+          or on Arweave, a specialised file chain, to drastically reduce the
           uploading cost. Links to those files are then maintained on chain.
           Regardless of the backend chosen, the hosting is paid once on a data
           size basis and the data lives forever.

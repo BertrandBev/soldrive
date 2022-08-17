@@ -13,7 +13,7 @@ SolDrive is completely on-chain cloud storage platform on [Solana](https://solan
 
 ## Backends
 
-Files and notes can be stored both on-chain directly Solana Accounts, or on [Arweave](https://www.arweave.org/), a specialized file chain, to drastically reduce the uploading cost. Links to those files are then maintained on chain. Regardless of the backend chosen, the hosting is paid once on a data size basis and the data lives forever.
+Files and notes can be stored both on-chain directly Solana Accounts, or on [Arweave](https://www.arweave.org/), a specialised file chain, to drastically reduce the uploading cost. Links to those files are then maintained on chain. Regardless of the backend chosen, the hosting is paid once on a data size basis and the data lives forever.
 
 ## Encryption
 
