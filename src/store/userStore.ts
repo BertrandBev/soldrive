@@ -1,5 +1,5 @@
 import { createGlobalState, useAsyncState } from "@vueuse/core";
-import { ref, watchEffect, computed } from "vue";
+import { ref, watch, computed } from "vue";
 import { useChainApi } from "../api/chainApi";
 import bs58 from "bs58";
 
@@ -16,7 +16,6 @@ function createUserStore() {
   const { api, wallet } = useChainApi();
 
   //
-  let firstLoad = false;
   const noUser = ref(false);
 
   // Create user
@@ -64,7 +63,21 @@ function createUserStore() {
       return user;
     },
     null,
-    { immediate: false }
+    { immediate: false, onError: (e) => console.error("Fetch user error", e) }
+  );
+
+  // Automatically fetch user on wallet
+  watch(
+    [wallet],
+    async () => {
+      if (wallet.value && api.value) {
+        await fetchUser.execute();
+        noUser.value = (
+          (fetchUser.error.value as Error) || new Error()
+        ).message.includes("Account does not exist");
+      }
+    },
+    { immediate: true }
   );
 
   async function deriveKey(key: BufferSource) {
@@ -114,17 +127,6 @@ function createUserStore() {
       data
     )) as ArrayBuffer;
   }
-
-  // Automatically fetch user on wallet connection
-  watchEffect(async () => {
-    if (wallet.value && api.value && !firstLoad) {
-      firstLoad = true;
-      await fetchUser.execute();
-      noUser.value = (
-        (fetchUser.error.value as Error) || new Error()
-      ).message.includes("Account does not exist");
-    }
-  });
 
   const authState = computed(() => {
     if (noUser.value) return AuthState.NO_USER;

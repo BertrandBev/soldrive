@@ -44,7 +44,7 @@ export default defineConfig({
         // Enable rollup polyfills plugin
         // used during production bundling
         // rollupNodePolyFill(),
-        // inject({ Buffer: ["buffer", "Buffer"] }),
+        inject({ Buffer: ["buffer", "Buffer"] }),
       ],
     },
   },

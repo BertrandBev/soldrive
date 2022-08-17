@@ -5,11 +5,9 @@ import * as solApi from "../../anchor/app/api";
 type SolApi = ReturnType<typeof solApi.getAPI>;
 
 // Re-export types
-export type Keyed<T> = solApi.Keyed<T>;
-export type File = solApi.File;
-export type Folder = solApi.Folder;
-export type User = solApi.User;
-export type Access = solApi.Access;
+type Keyed<T> = solApi.Keyed<T>;
+type File = solApi.File;
+type Folder = solApi.Folder;
 
 let folders: { [key: number]: Keyed<Folder> } = {};
 let files: { [key: number]: Keyed<File> } = {};

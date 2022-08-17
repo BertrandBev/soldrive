@@ -1,4 +1,4 @@
-import { ref, computed, watchEffect, Ref } from "vue";
+import { ref, computed, watch, Ref } from "vue";
 import { useWallet, AnchorWallet } from "solana-wallets-vue";
 import { BaseSolletWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { Connection, PublicKey } from "@solana/web3.js";
@@ -7,6 +7,10 @@ import { createGlobalState } from "@vueuse/core";
 import nacl from "tweetnacl";
 import * as anchor from "@project-serum/anchor";
 import web3 = anchor.web3;
+
+// Buffer polyfill
+import { Buffer } from "buffer";
+globalThis.Buffer = Buffer;
 
 // Import solana program
 import idl from "../../anchor/target/idl/soldrive.json";
@@ -17,13 +21,18 @@ import { createCache } from "./cache";
 const address = "5QEzcF7HPx6z3oN4Fu8cqxGr99oUEGS4uE4MrazyjstF";
 
 // Config
-const LOCAL_WALLET = true;
-const AIRDROP = true;
+const LOCAL_WALLET = import.meta.env.DEV && true;
+const LOCAL_CLUSTER = import.meta.env.DEV && true;
+const AIRDROP = import.meta.env.DEV && true;
+
+// Config
 const AIRDROP_LAMPORTS = 1e9;
 import id from "/Users/bbev/.config/solana/id.json";
 const keypair = web3.Keypair.fromSecretKey(Uint8Array.from(id as number[]));
 
-const clusterUrl = "http://127.0.0.1:8899";
+const clusterUrl = LOCAL_CLUSTER
+  ? "http://127.0.0.1:8899"
+  : web3.clusterApiUrl("mainnet-beta", false);
 const preflightCommitment = "processed";
 const commitment = "processed";
 const programID = new PublicKey(address);
@@ -105,32 +114,33 @@ export function _createChainAPI() {
 
   const api = computed(() => {
     // Create api & extend it with cache
-    if (program.value && wallet.value?.publicKey) {
-      const api = solApi.getAPI(
-        wallet.value.publicKey,
-        program.value,
-        LOCAL_WALLET ? [keypair] : []
-      );
-      return createCache(api);
-    } else {
-      return null;
-    }
+    if (!program.value || !wallet.value?.publicKey) return null;
+    const api = solApi.getAPI(
+      wallet.value.publicKey,
+      program.value,
+      LOCAL_WALLET ? [keypair] : []
+    );
+    return createCache(api);
   });
 
   // Airdrop if needed
   let airdropped = false;
   if (AIRDROP) {
-    watchEffect(async () => {
-      if (wallet.value && !airdropped) {
-        airdropped = true;
-        const balance = await connection.getBalance(wallet.value.publicKey);
-        console.log("Balance:", Math.round(balance / 1e9), "SOL");
-        if (balance < AIRDROP_LAMPORTS) {
-          await api.value?.airdrop(keypair.publicKey, AIRDROP_LAMPORTS);
-          console.log("Funds airdropped");
+    watch(
+      [wallet],
+      async () => {
+        if (wallet.value && !airdropped) {
+          airdropped = true;
+          const balance = await connection.getBalance(wallet.value.publicKey);
+          console.log("Balance:", Math.round(balance / 1e9), "SOL");
+          if (balance < AIRDROP_LAMPORTS) {
+            await api.value?.airdrop(keypair.publicKey, AIRDROP_LAMPORTS);
+            console.log("Funds airdropped");
+          }
         }
-      }
-    });
+      },
+      { immediate: true }
+    );
   }
 
   //
