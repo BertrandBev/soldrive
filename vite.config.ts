@@ -7,7 +7,7 @@ import vue from "@vitejs/plugin-vue";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: mode == "development" ? "/" : "/soldrive",
+  // base: mode == "development" ? "/" : "/soldrive", // gh-pages
   plugins: [vue()],
   define: {
     "process.env": process.env,
@@ -40,7 +40,6 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    minify: false,
     target: "esnext",
     commonjsOptions: { include: [] },
     // rollupOptions: {

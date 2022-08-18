@@ -121,8 +121,8 @@ export function _createChainAPI() {
   // Pick cluster
   const cluster = getCluster();
   const clusterUrl = {
-    mainnet: web3.clusterApiUrl("mainnet-beta", false),
-    devnet: web3.clusterApiUrl("devnet", false),
+    mainnet: web3.clusterApiUrl("mainnet-beta", true),
+    devnet: web3.clusterApiUrl("devnet", true),
     localnet: "http://127.0.0.1:8899",
   }[cluster];
   console.log("Init chain api on", cluster);
