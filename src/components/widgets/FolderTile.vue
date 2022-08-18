@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useAsyncState } from "@vueuse/core";
-import { useChainApi, Folder } from "../../api/chainApi";
+import { Folder } from "../../api/wrappedApi";
 import { useUserStore } from "../../store/userStore";
 import { useRouter, useRoute } from "vue-router";
 
@@ -10,8 +10,6 @@ import ContextMenu from "../utils/ContextMenu.vue";
 import { useClipbardStore } from "../../store/clipboardStore";
 
 // File icons
-const { api, wallet } = useChainApi();
-const { isLoggedIn } = useUserStore();
 const router = useRouter();
 const { pushFolder, hasFolder } = useClipbardStore();
 

@@ -32,7 +32,7 @@ const { isLoading, execute } = useAsyncState(
       await api.value!.removeFile(file.value!.id);
     } else {
       // Makes sure that the folder is not empty
-      const children = await api.value!.fetchChildren(folder.value!.id);
+      const children = await api.value!.fetchChildren(folder.value!.id, false);
       if (children.files.length + children.folders.length > 0) {
         modalOpen.value = false;
         throw new Error("The folder is not empty. Remove its content first");

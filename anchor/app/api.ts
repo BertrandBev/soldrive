@@ -22,7 +22,7 @@ function u32Bytes(num: number) {
 }
 
 // Extract types
-const typeProg = null as Program<Soldrive>;
+let typeProg: Program<Soldrive>;
 export type User = Awaited<ReturnType<typeof typeProg.account.user.fetch>>;
 type FileRaw = Awaited<ReturnType<typeof typeProg.account.file.fetch>>;
 type FolderRaw = Awaited<ReturnType<typeof typeProg.account.folder.fetch>>;
@@ -137,7 +137,7 @@ export function getAPI(
     const accountInfo = await program.account.file.getAccountInfo(
       pda.publicKey
     );
-    return decodeFileAccount(accountInfo, withContent);
+    return decodeFileAccount(accountInfo!, withContent);
   }
 
   async function fetchFiles(
@@ -274,21 +274,21 @@ export function getAPI(
     const filePda = await getFilePda(id);
     // Check if the current file has enough space
     if (!currentFile) currentFile = await fetchFile(id);
-    if (currentFile.maxSize < content?.byteLength || 0) {
+    if (currentFile.maxSize < (content?.byteLength || 0)) {
       // File needs re-creation
       if (!user) user = await fetchUser();
       const removeTx = await removeFile(id, false, signers);
       const createTx = await createFile(
         {
           ...file,
-          content,
+          content: content || file.content,
           id: user.fileId + 1,
         },
         content!.byteLength,
         false,
         signers
       );
-      await program.provider.sendAndConfirm(removeTx.add(createTx), signers);
+      await program.provider.sendAndConfirm!(removeTx.add(createTx), signers);
       return user.fileId + 1;
     } else {
       // Update file
@@ -345,7 +345,7 @@ export function getAPI(
       }),
     ];
     const instructions = await Promise.all(tx);
-    await program.provider.sendAll(
+    await program.provider.sendAll!(
       instructions.map((tx) => ({
         tx,
         signers: signers,
