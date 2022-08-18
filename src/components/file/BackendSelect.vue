@@ -2,11 +2,13 @@
 import { Backend } from "../../api/chainApi";
 import { ref } from "vue";
 import { InformationCircleIcon } from "@heroicons/vue/outline";
+import { getCluster } from "../../api/chainApi";
 
 defineProps<{
   modelValue: Backend;
 }>();
 
+const cluster = getCluster();
 const infoModalOpen = ref(false);
 
 const emit = defineEmits<{
@@ -47,6 +49,13 @@ function setBackend(backend: Backend) {
     <button class="btn btn-xs btn-ghost ml-2" @click="infoModalOpen = true">
       <InformationCircleIcon class="w-5 h-5"></InformationCircleIcon>
     </button>
+    <!-- Warning -->
+    <div
+      v-if="modelValue == 'arweave' && cluster == 'devnet'"
+      class="text-orange-400 text-sm"
+    >
+      data will be cleared after a week on devnet
+    </div>
     <!-- Info modal -->
     <div class="modal" :class="{ 'modal-open': infoModalOpen }">
       <div class="modal-box">

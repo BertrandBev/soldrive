@@ -26,13 +26,9 @@ import * as solApi from "../../anchor/app/api";
 const address = "5QEzcF7HPx6z3oN4Fu8cqxGr99oUEGS4uE4MrazyjstF";
 
 // Config
-export type Cluster = "mainnet" | "devnet" | "localnet";
-const cluster: Cluster = "devnet";
-const clusterUrl = {
-  mainnet: web3.clusterApiUrl("mainnet-beta", false),
-  devnet: web3.clusterApiUrl("devnet", false),
-  localnet: "http://127.0.0.1:8899",
-}[cluster];
+const CLUSTER_KEY = "cluster";
+const clusters = ["mainnet", "devnet", "localnet"] as const;
+export type Cluster = typeof clusters[number];
 
 const LOCAL_WALLET = import.meta.env.DEV && false;
 const AIRDROP = import.meta.env.DEV && true;
@@ -107,7 +103,31 @@ export function useAnchorProvider(
   });
 }
 
+export function getCluster(): Cluster {
+  const clusterStr = localStorage.getItem(CLUSTER_KEY);
+  if (clusters.some((c) => c == clusterStr)) return clusterStr as Cluster;
+  return "devnet";
+}
+
+export function setCluster(cluster: Cluster) {
+  const current = getCluster();
+  if (current != cluster) {
+    localStorage.setItem(CLUSTER_KEY, cluster);
+    location.reload();
+  }
+}
+
 export function _createChainAPI() {
+  // Pick cluster
+  const cluster = getCluster();
+  const clusterUrl = {
+    mainnet: web3.clusterApiUrl("mainnet-beta", false),
+    devnet: web3.clusterApiUrl("devnet", false),
+    localnet: "http://127.0.0.1:8899",
+  }[cluster];
+  console.log("Init chain api on", cluster);
+
+  // Pick wallet
   const wallet = keypair
     ? // Local keypair wallet
       ref({

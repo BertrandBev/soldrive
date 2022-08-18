@@ -1,5 +1,6 @@
 import { WebBundlr } from "@bundlr-network/client";
 import {
+  getCluster,
   useChainApi,
   useAnchorWallet,
   useAnchorProvider,
@@ -10,7 +11,6 @@ import { watch, ref } from "vue";
 import { Connection, Transaction } from "@solana/web3.js";
 import BigNumber from "bignumber.js";
 import { useUserStore } from "./userStore";
-const FORCE_ANCHOR_WALLET = true;
 import axios from "axios";
 
 import { FileType, fileMeme } from "./fileTypes";
@@ -34,8 +34,9 @@ export function spaceString(
 
 function createFileStore() {
   let { wallet, connection, provider } = useChainApi();
-  if (FORCE_ANCHOR_WALLET) {
-    // Force real wallet
+  // Force mainnet if using localnet
+  const cluster = getCluster();
+  if (cluster == "localnet") {
     wallet = useAnchorWallet();
     connection = new Connection(
       "https://api.mainnet-beta.solana.com",
@@ -62,9 +63,14 @@ function createFileStore() {
             return wallet.value?.signMessage(msg);
           },
         };
-        bundlr = new WebBundlr("https://node1.bundlr.network", "solana", pvd, {
+        const address =
+          cluster == "devnet"
+            ? "https://devnet.bundlr.network"
+            : "https://node1.bundlr.network";
+        bundlr = new WebBundlr(address, "solana", pvd, {
           timeout: 60e3,
         });
+        console.log("Arweave initialized on", cluster);
         readyPromise = bundlr.ready();
         // Ready up
         await readyPromise;

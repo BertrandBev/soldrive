@@ -118,6 +118,7 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
       toast.error("A valid file name must be provided");
       return;
     }
+    // Name too long
     if (nameTooLong.value) {
       toast.error("The provided name is too long");
       return;

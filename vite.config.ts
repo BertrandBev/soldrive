@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
     alias: {
       // "node-fetch": "isomorphic-fetch",
       // process: "rollup-plugin-node-polyfills/polyfills/process",
-      // crypto: "crypto-browserify",
+      crypto: "crypto-browserify",
       stream: "rollup-plugin-node-polyfills/polyfills/stream",
       // util: "rollup-plugin-node-polyfills/polyfills/util",
     },

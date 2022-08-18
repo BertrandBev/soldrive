@@ -6,6 +6,7 @@ import { ref, onMounted, watch, computed } from "vue";
 import BigNumber from "bignumber.js";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useAnchorWallet } from "../../api/chainApi";
+import { getCluster } from "../../api/chainApi";
 
 const {
   deposit,
@@ -20,6 +21,7 @@ const toast = useToast();
 const modalOpen = ref(false);
 const minSizeMb = ref(0);
 const amountMb = ref(0);
+const cluster = getCluster();
 
 const amountError = computed(() => {
   if (isNaN(amountMb.value) || amountMb.value <= 0) return "Invalid amount";
@@ -104,7 +106,7 @@ defineExpose({ open });
         {{ amountError }}
       </div>
       <div v-else class="mt-3 badge badge-lg badge-success">
-        Cost: {{ cryptoCostStr }}
+        Cost: {{ cryptoCostStr }} {{ cluster == "devnet" ? "(devnet)" : "" }}
       </div>
 
       <!--  -->

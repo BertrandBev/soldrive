@@ -12,7 +12,7 @@ const { mbCostArweave, mbCostSolana, getBalance, getCost, uploadFile } =
 
 const depositModal = ref<null | InstanceType<typeof DepositModal>>(null);
 
-const MAX_SIZE = 100e9;
+const MAX_SIZE = 300e6;
 
 // Unexported types
 type FileAccept = string | string[];

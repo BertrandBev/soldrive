@@ -68,7 +68,7 @@ watch(
     <div class="flex-1"></div>
     <!-- Buttons -->
     <ClusterButton></ClusterButton>
-    <div>
+    <div class="ml-2">
       <WalletMultiButton dark></WalletMultiButton>
     </div>
     <AuthButton></AuthButton>

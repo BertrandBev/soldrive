@@ -191,6 +191,12 @@ const {
     } else {
       // Solana backend
       content = data.value;
+      // Validate
+      if (content.byteLength > 1000) {
+        throw new Error(
+          "Max data size is 1KB on Solana. Consider switching to Arweave"
+        );
+      }
     }
 
     // Return content
@@ -292,9 +298,9 @@ defineExpose({ upload, updated });
 
     <!-- Info line -->
     <div class="flex mt-2">
+      <!-- Word count || file size -->
       <label v-if="isNote" class="whitespace-nowrap">{{ wordCountStr }}</label>
       <label v-else class="whitespace-nowrap">{{ fileSizeStr }}</label>
-      <!-- Word count -->
       <div class="w-full"></div>
       <!-- Rent cost -->
       <label class="whitespace-nowrap"> {{ noteRentCostStr }}</label>
