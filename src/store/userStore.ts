@@ -24,7 +24,8 @@ function createUserStore() {
   const fetchEncryptionKey = useAsyncState(
     async (createTx = true) => {
       if (!wallet.value || !api.value) return;
-      let encryptionKey = sessionStorage.getItem(ENCRYPTION_KEY);
+      const itemKey = ENCRYPTION_KEY + " " + wallet.value.publicKey.toBase58();
+      let encryptionKey = sessionStorage.getItem(itemKey);
       // Create transaction
       if (!encryptionKey && createTx) {
         const tx = await api.value.getSignTransaction();
@@ -32,7 +33,7 @@ function createUserStore() {
         const keyBuf = new Uint8Array(signed.signatures[0].signature!);
         encryptionKey = bs58.encode(keyBuf);
         // Persist encryption key until the session ends
-        sessionStorage.setItem(ENCRYPTION_KEY, encryptionKey);
+        sessionStorage.setItem(itemKey, encryptionKey);
       }
       // Derive keys
       if (encryptionKey) {
@@ -121,6 +122,7 @@ function createUserStore() {
   }
 
   async function decrypt(buf: ArrayBuffer, encrypt: boolean) {
+    if (!buf) return buf;
     const u8 = new Uint8Array(buf);
     const iv = u8.slice(0, 12);
     const data = u8.slice(12);

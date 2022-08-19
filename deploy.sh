@@ -4,8 +4,11 @@
 set -e
 
 # build
-# yarn build
+yarn build
 cd dist
+
+# Add cname
+echo "soldrive.xyz" > CNAME
 
 # Commit repo
 git init

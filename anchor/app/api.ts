@@ -47,7 +47,10 @@ export function getAPI(
   const connection = program.provider.connection;
 
   // Retreive types
-  async function airdrop(pubkey: web3.PublicKey, lamports: number) {
+  async function airdrop(
+    pubkey: web3.PublicKey,
+    lamports: number = 2 * web3.LAMPORTS_PER_SOL
+  ) {
     const sig = await connection.requestAirdrop(pubkey, lamports);
     await connection.confirmTransaction(sig);
   }
@@ -164,6 +167,12 @@ export function getAPI(
     const folderPromise = program.account.folder.all([
       {
         memcmp: {
+          offset: 8, // discriminator
+          bytes: authority.toBase58(),
+        },
+      },
+      {
+        memcmp: {
           offset: 8 + 32 + 4 + 8, // discriminator + owner + id + created_at
           bytes: bs58.encode(u32Bytes(id)),
         },
@@ -171,6 +180,12 @@ export function getAPI(
     ]);
     const filePromise = fetchFiles(
       [
+        {
+          memcmp: {
+            offset: 8, // discriminator
+            bytes: authority.toBase58(),
+          },
+        },
         {
           memcmp: {
             offset: 8 + 32 + 4 + 8, // discriminator + owner + id + created_at
@@ -361,6 +376,7 @@ export function getAPI(
   ) {
     const userPda = await getUserPda();
     const folderPda = await getFolderPda(id);
+    console.log('remove folder', id);
     await program.methods
       .removeFolder(id)
       .accounts({

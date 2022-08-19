@@ -165,7 +165,8 @@ const {
     }
 
     // Download content if needed
-    if (!data.value.byteLength) {
+    // Supposed to have been downloaded for notes
+    if (!data.value.byteLength && !isNote.value) {
       await download(0, true);
     }
 

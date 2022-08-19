@@ -35,10 +35,8 @@ const fetchChildren = useAsyncState(
   async () => {
     if (!api.value) return;
     const folder = folderId(props.path);
-    console.log("folder", folder);
     const children = await api.value.fetchChildren(folder, true);
-    console.log("children", children);
-    viewer.value?.clearCache(children.files.map((f) => f.id));
+    viewer.value?.clearCache();
     return children;
   },
   null,

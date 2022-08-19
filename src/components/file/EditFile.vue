@@ -65,10 +65,7 @@ const {
   error: fileLoadingError,
 } = useAsyncState(
   async () => {
-    if (isNew.value) {
-      // New file
-      file.value.parent = parseInt(props.folder) || 0;
-    } else {
+    if (!isNew.value) {
       // Existing file
       const res = await api.value?.fetchFile(fileId.value!, true);
       if (!res) throw new Error(`Note ${fileId.value} not found`);
@@ -123,6 +120,9 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
       toast.error("The provided name is too long");
       return;
     }
+
+    // Set parent
+    if (isNew.value) file.value.parent = parseInt(props.folder) || 0;
 
     // Retrieve content
     // Don't repace file.content in here to prevent reactive download from Content

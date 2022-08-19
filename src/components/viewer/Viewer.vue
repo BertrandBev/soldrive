@@ -64,7 +64,7 @@ const cached = ref({} as { [key: number]: string });
 watch([left], () => left.value && leftPressed());
 watch([right], () => right.value && rightPressed());
 
-const { isLoading, error, execute, state } = useAsyncState(
+const { isLoading, error, execute } = useAsyncState(
   async () => {
     if (!file.value) return;
     if (!cached.value[file.value.id]) {
@@ -72,11 +72,14 @@ const { isLoading, error, execute, state } = useAsyncState(
       const url = await arrayBufferToBase64(file.value.fileExt, buf);
       cached.value[file.value.id] = url;
     }
-    return cached.value[file.value.id];
   },
   null,
   { immediate: false }
 );
+
+const state = computed(() => {
+  return file.value ? cached.value[file.value.id] : null;
+});
 
 watch(
   [file],
@@ -132,8 +135,8 @@ function download() {
   clientDownload(file.value.name + "." + file.value.fileExt, state.value);
 }
 
-function clearCache(ids: number[]) {
-  ids.forEach((id) => delete cached.value[id]);
+function clearCache() {
+  cached.value = {};
 }
 
 defineExpose({ clearCache });

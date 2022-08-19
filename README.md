@@ -73,3 +73,15 @@ Run the client
 yarn install
 yarn dev
 ```
+
+
+<!-- Feedback -->
+<!-- Dropdown create file  -->
+<!-- Auto arweave if no solana  -->
+<!-- Hover on tooltop  -->
+<!-- Click outside image  -->
+<!-- Auto focus new folder (because of info acrtive) -->
+<!-- Shortcuts escape = cancel -->
+<!-- Drag drop -->
+<!-- Center logos -->
+<!--  -->
