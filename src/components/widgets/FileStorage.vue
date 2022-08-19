@@ -8,9 +8,14 @@ import DepositModal from "./DepositModal.vue";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useAnchorWallet } from "../../api/chainApi";
 import { InformationCircleIcon } from "@heroicons/vue/outline";
+import { useEscapeClose } from "../utils/utils";
+
 const modalOpen = ref(false);
 const infoModalOpen = ref(false);
 const depositModal = ref<null | InstanceType<typeof DepositModal>>(null);
+
+useEscapeClose(modalOpen);
+useEscapeClose(infoModalOpen);
 
 const {
   deposit,

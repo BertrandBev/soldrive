@@ -7,6 +7,7 @@ import BigNumber from "bignumber.js";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useAnchorWallet } from "../../api/chainApi";
 import { getCluster } from "../../api/chainApi";
+import { useEscapeClose } from "../utils/utils";
 
 const {
   deposit,
@@ -22,6 +23,8 @@ const modalOpen = ref(false);
 const minSizeMb = ref(0);
 const amountMb = ref(0);
 const cluster = getCluster();
+
+useEscapeClose(modalOpen);
 
 const amountError = computed(() => {
   if (isNaN(amountMb.value) || amountMb.value <= 0) return "Invalid amount";

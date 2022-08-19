@@ -10,7 +10,7 @@ const cluster = getCluster();
 const { execute: airdrop, isLoading } = useAsyncState(
   async () => {
     if (!api.value || !wallet.value) return toast.error("Connect wallet first");
-    if (cluster != "devnet") return toast.error("Can't airdrop on mainnet");
+    if (cluster == "mainnet") return toast.error("Can't airdrop on mainnet");
     await api.value.airdrop(wallet.value.publicKey, 2);
     toast.success("Airdropped 2 SOL!");
   },

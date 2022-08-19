@@ -7,8 +7,10 @@ import { ref, watch, watchEffect, onMounted, computed } from "vue";
 import Loader from "./utils/Loader.vue";
 import { folderId } from "../router";
 import { useRouter } from "vue-router";
+import { useClipbardStore } from "../store/clipboardStore";
 
-// File icons
+// Components
+import ContextMenu from "./utils/ContextMenu.vue";
 import FileTile from "./widgets/FileTile.vue";
 import FolderTile from "./widgets/FolderTile.vue";
 import EditFolderModal from "./widgets/EditFolderModal.vue";
@@ -19,13 +21,23 @@ import Viewer from "./viewer/Viewer.vue";
 const api = useWrappedApi();
 const { isLoggedIn } = useUserStore();
 const router = useRouter();
+const { isEmpty: clipboardEmpty } = useClipbardStore();
 const editFolderModal = ref<null | InstanceType<typeof EditFolderModal>>(null);
 const removeModal = ref<null | InstanceType<typeof RemoveModal>>(null);
 const viewer = ref<null | InstanceType<typeof Viewer>>(null);
+const menu = ref<null | InstanceType<typeof ContextMenu>>(null);
+
+function contextHandler(clickData: MouseEvent) {
+  if (menu.value) {
+    menu.value.open(clickData);
+  }
+}
 
 const props = defineProps<{
   path: string[];
   file?: string;
+  onNewFile: () => void;
+  onMove: () => void;
 }>();
 
 watch([props], () => {});
@@ -91,11 +103,15 @@ function removeFile(file: File) {
 function loadChildren() {
   fetchChildren.execute();
 }
+
 defineExpose({ editFolder, removeFolder, loadChildren });
 </script>
 
 <template>
-  <div class="flex flex-col">
+  <div
+    class="flex flex-col"
+    @contextmenu.prevent.stop="(ev) => contextHandler(ev)"
+  >
     <!-- PathBar -->
     <PathBar :path="path"></PathBar>
     <!-- Loader -->
@@ -146,5 +162,17 @@ defineExpose({ editFolder, removeFolder, loadChildren });
       :files="files.map((f) => f)"
       :fileId="props.file"
     ></Viewer>
+    <!-- Context -->
+    <ContextMenu ref="menu">
+      <li>
+        <a href="#" @click.prevent="() => editFolder()">New folder</a>
+      </li>
+      <li>
+        <a href="#" @click.prevent="props.onNewFile">New file</a>
+      </li>
+      <li v-if="!clipboardEmpty">
+        <a href="#" @click.prevent="props.onMove">Paste content</a>
+      </li>
+    </ContextMenu>
   </div>
 </template>

@@ -171,8 +171,9 @@ const { execute: saveFile, isLoading: fileSaving } = useAsyncState(
   }
 );
 
-function setFilename(name: string) {
-  file.value.name = name;
+function onFile(name: string) {
+  if (isNew.value) file.value.backend = "arweave";
+  if (!file.value.name) file.value.name = name;
 }
 
 function navBack() {
@@ -225,9 +226,9 @@ const updated = computed(() => {
       <Content
         ref="content"
         :file="data.file"
-        :original-file="data.originalFile"
-        :is-new="isNew"
-        :set-file-name="setFilename"
+        :originalFile="data.originalFile"
+        :isNew="isNew"
+        :onFile="onFile"
       ></Content>
       <!-- <label class="label mt-4"> Website </label> -->
 

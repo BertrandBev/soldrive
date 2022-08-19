@@ -162,7 +162,6 @@ function createWrappedApi() {
     // Combined
     async function fetchChildren(id: number, withContent: boolean) {
       const rtn = await api.fetchChildren(id, withContent);
-      console.log("rtn", rtn);
       const folders = await Promise.all(
         rtn.folders.map((f) => decryptFolder(f.account))
       );

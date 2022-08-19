@@ -3,6 +3,7 @@ import { Access } from "../../api/chainApi";
 import { ref, watch } from "vue";
 import { InformationCircleIcon } from "@heroicons/vue/outline";
 import { LockClosedIcon, LockOpenIcon } from "@heroicons/vue/solid";
+import { useEscapeClose } from "../utils/utils";
 
 const props = defineProps<{
   modelValue: Access;
@@ -11,6 +12,7 @@ const props = defineProps<{
 const access = ref("private" as Access);
 
 const infoModalOpen = ref(false);
+useEscapeClose(infoModalOpen);
 
 const emit = defineEmits<{
   (e: "update:modelValue", value: Access): void;

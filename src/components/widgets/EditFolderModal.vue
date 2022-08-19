@@ -7,6 +7,7 @@ import { useToast } from "vue-toastification";
 import web3 = anchor.web3;
 import { useUserStore } from "../../store/userStore";
 import { useClipbardStore } from "../../store/clipboardStore";
+import { useEscapeClose } from "../utils/utils";
 
 const api = useWrappedApi();
 const toast = useToast();
@@ -47,6 +48,7 @@ watch(
 );
 
 const modalOpen = ref(false);
+useEscapeClose(modalOpen);
 const title = computed(() => {
   return isNew.value ? "Create a new folder" : "Edit folder";
 });
@@ -55,9 +57,10 @@ const title = computed(() => {
 watch(
   [modalOpen],
   () => {
-    if (modalOpen.value!) {
-      console.log("FOCUS");
-      input.value!.focus();
+    if (modalOpen.value) {
+      setTimeout(() => {
+        input.value!.focus();
+      }, 50);
     }
   },
   { immediate: true }
@@ -130,6 +133,7 @@ defineExpose({ open });
       <input
         ref="input"
         v-model="folder.name"
+        autofocus
         class="input input-info input-bordered w-full mt-3"
         :class="{
           'input-info': !emptyName && !nameTooLong,

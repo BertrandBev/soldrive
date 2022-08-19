@@ -3,6 +3,7 @@ import { Backend } from "../../api/chainApi";
 import { ref } from "vue";
 import { InformationCircleIcon } from "@heroicons/vue/outline";
 import { getCluster } from "../../api/chainApi";
+import { useEscapeClose } from "../utils/utils";
 
 defineProps<{
   modelValue: Backend;
@@ -10,6 +11,7 @@ defineProps<{
 
 const cluster = getCluster();
 const infoModalOpen = ref(false);
+useEscapeClose(infoModalOpen);
 
 const emit = defineEmits<{
   (e: "update:modelValue", value: Backend): void;

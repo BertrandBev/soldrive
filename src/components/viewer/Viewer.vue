@@ -96,12 +96,14 @@ function navToFileId(fileId: number) {
 }
 
 function leftPressed() {
+  if (!opened.value) return;
   let idx = fileIdx.value! - 1;
   if (idx < 0) idx = props.files.length - 1;
   navToFileId(props.files[idx].id);
 }
 
 function rightPressed() {
+  if (!opened.value) return;
   let idx = fileIdx.value! + 1;
   if (idx >= props.files.length) idx = 0;
   navToFileId(props.files[idx].id);
@@ -148,11 +150,12 @@ defineExpose({ clearCache });
   <div
     v-if="opened"
     class="w-screen h-screen bg-[#000000dd] fixed top-0 left-0 z-[100] flex flex-col"
+    @click="navBack"
   >
     <!-- Toolbar -->
     <div class="w-full flex items-center p-2">
       <!-- Back button -->
-      <button class="btn btn-circle btn-ghost" @click="navBack">
+      <button class="btn btn-circle btn-ghost" @click.stop="navBack">
         <ChevronLeftIcon class="w-5 h-5" />
       </button>
       <!-- File icon -->
@@ -162,17 +165,17 @@ defineExpose({ clearCache });
       <!-- Spacer -->
       <div class="flex-1"></div>
       <!-- Navigation -->
-      <button class="btn btn-circle btn-ghost" @click="leftPressed">
+      <button class="btn btn-circle btn-ghost" @click.stop="leftPressed">
         <ArrowLeftIcon class="w-5 h-5" />
       </button>
       <div class="text-md font-mono">
         {{ (fileIdx || 0) + 1 }}/{{ props.files.length }}
       </div>
-      <button class="btn btn-circle btn-ghost" @click="rightPressed">
+      <button class="btn btn-circle btn-ghost" @click.stop="rightPressed">
         <ArrowRightIcon class="w-5 h-5" />
       </button>
       <!-- Download -->
-      <button class="btn btn-circle btn-ghost" @click="download">
+      <button class="btn btn-circle btn-ghost" @click.stop="download">
         <DownloadIcon class="w-5 h-5" />
       </button>
       <!-- Menu -->
@@ -207,7 +210,7 @@ defineExpose({ clearCache });
       <TextViewer v-else-if="fileType == 'text'" :dataUri="state"> </TextViewer>
       <!-- Downloader -->
       <div v-else class="full-center">
-        <div class="btn btn-ghost gap-4" @click="download">
+        <div class="btn btn-ghost gap-4" @click.stop="download">
           Download
           <DownloadIcon class="h-8 w-8"></DownloadIcon>
         </div>

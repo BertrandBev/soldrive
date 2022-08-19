@@ -64,9 +64,9 @@ function createFileStore() {
           },
         };
         const address =
-          cluster == "devnet"
-            ? "https://devnet.bundlr.network"
-            : "https://node1.bundlr.network";
+          cluster == "mainnet"
+            ? "https://node1.bundlr.network"
+            : "https://devnet.bundlr.network";
         bundlr = new WebBundlr(address, "solana", pvd, {
           timeout: 60e3,
         });

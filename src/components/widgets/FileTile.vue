@@ -25,7 +25,7 @@ const fileIcon = computed(() => {
   return _fileIcon(fileExt);
 });
 
-function handler(clickData: MouseEvent) {
+function contextHandler(clickData: MouseEvent) {
   if (menu.value) {
     menu.value.open(clickData);
   }
@@ -59,12 +59,12 @@ function move() {
     <div
       class="card card-bordered btn btn-ghost shadow-xl border-slate-500 w-full h-[196px] p-0 relative overflow-visible"
       :class="{ 'opacity-50': isMoving }"
-      @contextmenu.prevent="(ev) => handler(ev)"
+      @contextmenu.prevent.stop="(ev) => contextHandler(ev)"
       style="text-transform: initial"
       @click="onClick()"
     >
       <!-- Icon -->
-      <div class="absolute-center ">
+      <div class="absolute-center">
         <img :src="fileIcon" class="w-[72px] h-[72px] object-contain" />
       </div>
       <!-- Tooltips -->
@@ -119,6 +119,4 @@ function move() {
   </div>
 </template>
 
-<style>
-
-</style>
+<style></style>

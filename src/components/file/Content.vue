@@ -26,7 +26,7 @@ const props = defineProps<{
   originalFile: File;
   file: File;
   isNew: boolean;
-  setFileName: (name: string) => void;
+  onFile: (name: string) => void;
 }>();
 
 const encoder = new TextEncoder();
@@ -224,9 +224,7 @@ const fileMeta = computed(() => ({
 }));
 
 function onFile(name: string) {
-  if (!props.file.name) {
-    props.setFileName(name);
-  }
+  props.onFile(name);
 }
 
 const infoBanner = computed(() => {

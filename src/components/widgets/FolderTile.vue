@@ -22,7 +22,7 @@ const props = defineProps<{
 
 const menu = ref<null | InstanceType<typeof ContextMenu>>(null);
 
-function handler(clickData: MouseEvent) {
+function contextHandler(clickData: MouseEvent) {
   if (menu.value) {
     menu.value.open(clickData);
   }
@@ -48,7 +48,7 @@ function move() {
     <div
       class="card card-bordered btn btn-ghost border-slate-500 w-full h-[196px] p-0 overflow-visible"
       :class="{ 'opacity-50': isMoving }"
-      @contextmenu.prevent="(ev) => handler(ev)"
+      @contextmenu.prevent.stop="(ev) => contextHandler(ev)"
       style="text-transform: initial"
       @click="onClick()"
     >

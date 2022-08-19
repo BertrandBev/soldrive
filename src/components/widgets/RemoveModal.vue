@@ -6,6 +6,7 @@ import * as anchor from "@project-serum/anchor";
 import { useToast } from "vue-toastification";
 import { useClipbardStore } from "../../store/clipboardStore";
 import web3 = anchor.web3;
+import { useEscapeClose } from "../utils/utils";
 
 const api = useWrappedApi();
 const toast = useToast();
@@ -20,6 +21,8 @@ const file = ref<File | null>();
 const isFile = computed(() => !!file.value);
 
 const modalOpen = ref(false);
+useEscapeClose(modalOpen);
+
 const content = computed(() => {
   return isFile.value
     ? `Do you want to remove the file "${file.value?.name}"`

@@ -4,7 +4,13 @@ import { File, Folder, useWrappedApi } from "../api/wrappedApi";
 import { fileIcon } from "../store/fileTypes";
 import folderIcon from "../assets/files/folder.png";
 
-type Item = { type: "file" | "folder"; id: number; name: string; icon: string };
+type Item = {
+  type: "file" | "folder";
+  id: number;
+  parent: number;
+  name: string;
+  icon: string;
+};
 
 function createClipboardStore() {
   const api = useWrappedApi();
@@ -18,6 +24,7 @@ function createClipboardStore() {
     items.value.push({
       type: "file",
       id: file.id,
+      parent: file.parent,
       name: file.name,
       icon: fileIcon(file.fileExt),
     });
@@ -27,6 +34,7 @@ function createClipboardStore() {
     items.value.push({
       type: "folder",
       id: folder.id,
+      parent: folder.parent,
       name: folder.name,
       icon: folderIcon,
     });
@@ -71,11 +79,15 @@ function createClipboardStore() {
   }
 
   async function move(parent: number) {
-    await api.value!.updateParent(
-      items.value.filter((i) => i.type == "file").map((f) => f.id),
-      items.value.filter((i) => i.type == "folder").map((f) => f.id),
-      parent
-    );
+    // Remove
+    const itemsToMove = items.value.filter((i) => i.parent != parent);
+    console.log('items to move', itemsToMove)
+    if (itemsToMove.length)
+      await api.value!.updateParent(
+        itemsToMove.filter((i) => i.type == "file").map((f) => f.id),
+        itemsToMove.filter((i) => i.type == "folder").map((f) => f.id),
+        parent
+      );
     clear();
   }
 

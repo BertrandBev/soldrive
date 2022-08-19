@@ -11,7 +11,7 @@ const props = defineProps<{
   onMoved: () => void;
 }>();
 
-const { execute, isLoading } = useAsyncState(
+const { execute: moveContent, isLoading } = useAsyncState(
   async () => {
     await move(props.folder);
     props.onMoved();
@@ -21,6 +21,8 @@ const { execute, isLoading } = useAsyncState(
     immediate: false,
   }
 );
+
+defineExpose({ moveContent });
 </script>
 
 <template>
@@ -48,7 +50,7 @@ const { execute, isLoading } = useAsyncState(
     <button
       class="btn btn-ghost gap-2"
       :class="{ loading: isLoading }"
-      @click="() => execute()"
+      @click="() => moveContent()"
     >
       Paste
       <CheckIcon class="w-5 h-5"></CheckIcon>

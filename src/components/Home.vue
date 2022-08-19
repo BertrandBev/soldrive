@@ -13,8 +13,9 @@ import { useClipbardStore } from "../store/clipboardStore";
 import ClipboardBar from "./widgets/ClipboardBar.vue";
 
 const router = useRouter();
-const { isEmpty } = useClipbardStore();
+const { isEmpty, move } = useClipbardStore();
 const explorer = ref<null | InstanceType<typeof Explorer>>(null);
+const clipboardBar = ref<null | InstanceType<typeof ClipboardBar>>(null);
 
 const props = defineProps<{
   path: string | string[];
@@ -23,6 +24,10 @@ const props = defineProps<{
 
 const folder = computed(() => folderId(path.value));
 const path = computed(() => (Array.isArray(props.path) ? props.path : []));
+
+function newFolder() {
+  explorer.value?.editFolder();
+}
 
 function newFile() {
   router.push({ path: "/file", query: { folder: folder.value } });
@@ -47,7 +52,7 @@ function onMoved() {
       <!-- Spacer -->
       <div class="flex-1"></div>
       <!-- Add button -->
-      <button class="btn btn-ghost gap-2" @click="explorer?.editFolder()">
+      <button class="btn btn-ghost gap-2" @click="newFolder">
         New folder
         <FolderAddIcon class="w-5 h-5"></FolderAddIcon>
       </button>
@@ -58,8 +63,19 @@ function onMoved() {
       </button>
     </div>
     <!-- Clipboard -->
-    <ClipboardBar v-else :folder="folder" :onMoved="onMoved"></ClipboardBar>
+    <ClipboardBar
+      v-else
+      ref="clipboardBar"
+      :folder="folder"
+      :onMoved="onMoved"
+    ></ClipboardBar>
     <!-- Explorer -->
-    <Explorer ref="explorer" :path="path" :file="file"></Explorer>
+    <Explorer
+      ref="explorer"
+      :path="path"
+      :file="file"
+      :onNewFile="newFile"
+      :onMove="() => clipboardBar?.moveContent()"
+    ></Explorer>
   </div>
 </template>

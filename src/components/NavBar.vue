@@ -41,7 +41,7 @@ watch(
 
 <template>
   <div
-    class="navbar bg-base-200 border-b border-slate-800 sticky top-0 z-50 overflow-hidden"
+    class="navbar bg-base-200 border-b border-slate-800 sticky top-0 z-50"
   >
     <!-- Menu button -->
     <button

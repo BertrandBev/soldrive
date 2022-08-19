@@ -5,14 +5,6 @@ import Drawer from "./components/Drawer.vue";
 import { useRoute } from "vue-router";
 import { useUserStore } from "./store/userStore";
 import Loader from "./components/utils/Loader.vue";
-import { useMagicKeys } from "@vueuse/core";
-
-const keys = useMagicKeys();
-const cmdA = keys["Cmd+A"];
-
-watch(cmdA, (v) => {
-  if (v) console.log("Cmd + A have been pressed");
-});
 
 const drawer = ref(null);
 const route = useRoute();
@@ -31,12 +23,12 @@ function onMenuClicked() {
   el.click();
 }
 
-document.addEventListener("keydown", function (event) {
-  if (event.metaKey) {
-    console.log("cmd pressed");
-    event.preventDefault();
-  }
-});
+// document.addEventListener("keydown", function (event) {
+//   if (event.metaKey) {
+//     // console.log("cmd pressed");
+//     // event.stopPropagation();
+//   }
+// });
 
 // Handle auto navigation
 </script>
