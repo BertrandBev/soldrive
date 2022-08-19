@@ -26,7 +26,12 @@ const props = defineProps<{
   folder: string;
 }>();
 
+const input = ref<HTMLElement | null>(null);
 const content = ref<null | InstanceType<typeof Content>>(null);
+
+onMounted(() => {
+  input.value!.focus();
+});
 
 const fileId = computed(() => {
   return props.id ? parseInt(props.id) : undefined;
@@ -200,6 +205,7 @@ const updated = computed(() => {
         <!-- TODO: share with editFolderModal -->
         <div class="flex flex-col w-full">
           <input
+            ref="input"
             v-model="file.name"
             class="input input-info input-bordered w-full"
             :class="{

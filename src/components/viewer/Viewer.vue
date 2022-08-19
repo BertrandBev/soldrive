@@ -29,7 +29,7 @@ import { useRoute, useRouter } from "vue-router";
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-const { left, right } = useMagicKeys();
+const { left, right, escape } = useMagicKeys();
 const { downloadFile, arrayBufferToBase64, clientDownload } = useFileStore();
 
 // type Loader = ReturnType<typeof useAsyncState<string | null, true>>;
@@ -63,6 +63,7 @@ const cached = ref({} as { [key: number]: string });
 
 watch([left], () => left.value && leftPressed());
 watch([right], () => right.value && rightPressed());
+watch([escape], () => navBack());
 
 const { isLoading, error, execute } = useAsyncState(
   async () => {
@@ -107,7 +108,8 @@ function rightPressed() {
 }
 
 function navBack() {
-  router.back();
+  // Strip out query
+  router.replace({ path: route.path });
 }
 
 watch(

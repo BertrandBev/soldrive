@@ -30,7 +30,7 @@ const CLUSTER_KEY = "cluster";
 const clusters = ["mainnet", "devnet", "localnet"] as const;
 export type Cluster = typeof clusters[number];
 
-const LOCAL_WALLET = import.meta.env.DEV && false;
+const LOCAL_WALLET = import.meta.env.DEV && true;
 const AIRDROP = import.meta.env.DEV && true;
 
 // Config
@@ -104,6 +104,7 @@ export function useAnchorProvider(
 }
 
 export function getCluster(): Cluster {
+  if (LOCAL_WALLET) return "localnet";
   const clusterStr = localStorage.getItem(CLUSTER_KEY);
   if (clusters.some((c) => c == clusterStr)) return clusterStr as Cluster;
   return "devnet";

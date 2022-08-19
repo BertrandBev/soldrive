@@ -57,15 +57,15 @@ function move() {
   <div>
     <!-- File -->
     <div
-      class="card card-bordered btn btn-ghost shadow-xl border-slate-500 w-full h-[180px] items-start p-0 relative overflow-visible"
+      class="card card-bordered btn btn-ghost shadow-xl border-slate-500 w-full h-[196px] p-0 relative overflow-visible"
       :class="{ 'opacity-50': isMoving }"
       @contextmenu.prevent="(ev) => handler(ev)"
       style="text-transform: initial"
       @click="onClick()"
     >
       <!-- Icon -->
-      <div class="flex-1 flex self-center items-center">
-        <img :src="fileIcon" class="w-[72px] h-[72px]" />
+      <div class="absolute-center ">
+        <img :src="fileIcon" class="w-[72px] h-[72px] object-contain" />
       </div>
       <!-- Tooltips -->
       <div
@@ -97,9 +97,9 @@ function move() {
         ></LockOpenIcon>
       </div>
       <!-- Row -->
-      <div class="flex text-left p-3">
+      <div class="absolute bottom-0 left-0 p-3">
         <!-- Name -->
-        <p class="text-2-lines">
+        <p class="text-2-lines text-left">
           {{ props.file.name }}
         </p>
       </div>
@@ -118,3 +118,7 @@ function move() {
     </ContextMenu>
   </div>
 </template>
+
+<style>
+
+</style>

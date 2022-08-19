@@ -12,6 +12,7 @@ const api = useWrappedApi();
 const toast = useToast();
 const { user, fetchUser, encrypt } = useUserStore();
 const { updateFolder } = useClipbardStore();
+const input = ref<HTMLElement | null>(null);
 
 //
 const props = defineProps<{
@@ -49,6 +50,18 @@ const modalOpen = ref(false);
 const title = computed(() => {
   return isNew.value ? "Create a new folder" : "Edit folder";
 });
+
+// Focus modal automatically
+watch(
+  [modalOpen],
+  () => {
+    if (modalOpen.value!) {
+      console.log("FOCUS");
+      input.value!.focus();
+    }
+  },
+  { immediate: true }
+);
 
 const { isLoading: folderSaving, execute: saveFolder } = useAsyncState(
   async () => {
@@ -115,6 +128,7 @@ defineExpose({ open });
       <h3 class="font-bold text-lg">{{ title }}</h3>
       <!-- TODO: share with editFile -->
       <input
+        ref="input"
         v-model="folder.name"
         class="input input-info input-bordered w-full mt-3"
         :class="{

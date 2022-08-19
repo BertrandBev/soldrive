@@ -1,10 +1,18 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, watch, computed } from "vue";
 import NavBar from "./components/NavBar.vue";
 import Drawer from "./components/Drawer.vue";
 import { useRoute } from "vue-router";
 import { useUserStore } from "./store/userStore";
 import Loader from "./components/utils/Loader.vue";
+import { useMagicKeys } from "@vueuse/core";
+
+const keys = useMagicKeys();
+const cmdA = keys["Cmd+A"];
+
+watch(cmdA, (v) => {
+  if (v) console.log("Cmd + A have been pressed");
+});
 
 const drawer = ref(null);
 const route = useRoute();
@@ -22,6 +30,13 @@ function onMenuClicked() {
   const el = drawer.value as any;
   el.click();
 }
+
+document.addEventListener("keydown", function (event) {
+  if (event.metaKey) {
+    console.log("cmd pressed");
+    event.preventDefault();
+  }
+});
 
 // Handle auto navigation
 </script>
@@ -46,6 +61,7 @@ function onMenuClicked() {
 </template>
 
 <style>
+/* Common classes */
 .flex-center {
   display: flex;
   align-items: center;
@@ -58,6 +74,13 @@ function onMenuClicked() {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .text-2-lines {

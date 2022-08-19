@@ -46,19 +46,22 @@ function move() {
   <div>
     <!-- Folder -->
     <div
-      class="card card-bordered btn btn-ghost border-slate-500 w-full h-[180px] items-start p-0 overflow-visible"
+      class="card card-bordered btn btn-ghost border-slate-500 w-full h-[196px] p-0 overflow-visible"
       :class="{ 'opacity-50': isMoving }"
       @contextmenu.prevent="(ev) => handler(ev)"
       style="text-transform: initial"
       @click="onClick()"
     >
       <!-- Icon -->
-      <div class="flex-1 flex self-center items-center">
-        <img src="../../assets/files/folder.png" class="w-[96px] h-[96px]" />
+      <div class="absolute-center">
+        <img
+          src="../../assets/files/folder.png"
+          class="w-[96px] h-[96px] object-contain"
+        />
       </div>
       <!-- Name -->
-      <div class="flex text-left p-3">
-        <p class="text-2-lines">
+      <div class="absolute bottom-0 left-0 p-3">
+        <p class="text-2-lines text-left">
           {{ folder.name }}
         </p>
       </div>
