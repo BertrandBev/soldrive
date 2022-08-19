@@ -76,10 +76,6 @@ yarn dev
 
 
 <!-- Feedback -->
-<!-- Auto arweave if no solana  -->
-<!-- Hover on tooltop  -->
-<!-- Click outside image  -->
-<!-- Shortcuts escape = cancel -->
+<!-- Hover on tooltip  -->
 <!-- Drag drop -->
-<!-- Center logos -->
 <!--  -->

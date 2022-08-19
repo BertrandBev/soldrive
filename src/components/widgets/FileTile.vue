@@ -51,6 +51,10 @@ const isMoving = computed(() => {
 function move() {
   pushFile(props.file);
 }
+
+function onDragStart() {
+  console.log("on drag start");
+}
 </script>
 
 <template>
@@ -62,10 +66,19 @@ function move() {
       @contextmenu.prevent.stop="(ev) => contextHandler(ev)"
       style="text-transform: initial"
       @click="onClick()"
+      draggable="true"
+      dropzone="true"
+      data-a="wow"
+      :data-test="['a', 'b']"
+      :ondragstart="onDragStart"
     >
       <!-- Icon -->
       <div class="absolute-center">
-        <img :src="fileIcon" class="w-[72px] h-[72px] object-contain" />
+        <img
+          :src="fileIcon"
+          class="w-[72px] h-[72px] object-contain"
+          draggable="false"
+        />
       </div>
       <!-- Tooltips -->
       <div

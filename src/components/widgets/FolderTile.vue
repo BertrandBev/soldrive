@@ -21,6 +21,7 @@ const props = defineProps<{
 }>();
 
 const menu = ref<null | InstanceType<typeof ContextMenu>>(null);
+const dragHighlight = ref(false);
 
 function contextHandler(clickData: MouseEvent) {
   if (menu.value) {
@@ -40,6 +41,23 @@ const isMoving = computed(() => {
 function move() {
   pushFolder(props.folder);
 }
+
+function onDragLeave(ev: any) {
+  ev.preventDefault();
+  dragHighlight.value = false;
+}
+
+function onDragOver(ev: any) {
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = "move";
+  dragHighlight.value = true;
+}
+
+function onDrop(ev: any) {
+  ev.preventDefault();
+  dragHighlight.value = false;
+  console.log("data", ev.srcElement);
+}
 </script>
 
 <template>
@@ -47,16 +65,20 @@ function move() {
     <!-- Folder -->
     <div
       class="card card-bordered btn btn-ghost border-slate-500 w-full h-[196px] p-0 overflow-visible"
-      :class="{ 'opacity-50': isMoving }"
+      :class="{ 'opacity-50': isMoving, 'bg-green-700': dragHighlight }"
       @contextmenu.prevent.stop="(ev) => contextHandler(ev)"
       style="text-transform: initial"
       @click="onClick()"
+      :ondragover="onDragOver"
+      :ondragleave="onDragLeave"
+      :ondrop="onDrop"
     >
       <!-- Icon -->
       <div class="absolute-center">
         <img
           src="../../assets/files/folder.png"
           class="w-[96px] h-[96px] object-contain"
+          draggable="false"
         />
       </div>
       <!-- Name -->
