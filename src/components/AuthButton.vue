@@ -85,7 +85,14 @@ async function createUserFromModal() {
   // TODO: extract in a function
   if (createUser.error.value) {
     console.log("Create user error", createUser.error.value);
-    const msg = (createUser.error.value as Error).message as string;
+    let msg = (createUser.error.value as Error).message as string;
+    if (
+      msg.includes("no record of a prior credit") ||
+      msg.includes("custom program error: 0x1")
+    ) {
+      msg =
+        "Insufficient funds. If on devnet, consider Airdropping some using the button on the top bar";
+    }
     toast.error(msg);
   }
 }

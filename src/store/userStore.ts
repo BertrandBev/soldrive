@@ -75,7 +75,7 @@ function createUserStore() {
       await fetchUser.execute();
     },
     null,
-    { immediate: false, onError: (e) => console.error("Create user error") }
+    { immediate: false, onError: (e) => console.error("Create user error", e) }
   );
 
   // Automatically fetch user on wallet

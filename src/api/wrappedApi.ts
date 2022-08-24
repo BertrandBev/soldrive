@@ -23,12 +23,12 @@ let files: { [key: number]: Keyed<solApi.File> } = {};
 
 function createCache(api: SolApi): SolApi {
   // Wrap account lookups in cache
-  const fetchFolder = api.fetchFolders;
+  const fetchFolders = api.fetchFolders;
   api.fetchFolders = async (ids: number[] | undefined) => {
-    if (ids == undefined) return fetchFolder(ids);
+    if (ids == undefined) return fetchFolders(ids);
     else {
       const fetchIds = ids.filter((id) => !folders[id]);
-      const fetched = await fetchFolder(fetchIds);
+      const fetched = await fetchFolders(fetchIds);
       fetched.forEach((folder) => (folders[folder.account.id] = folder));
       return ids.map((id) => folders[id]);
     }
@@ -44,6 +44,29 @@ function createCache(api: SolApi): SolApi {
   api.removeFolder = async (id: number, ...args) => {
     delete folders[id];
     return removeFolder(id, ...args);
+  };
+
+  // File
+  const fetchFile = api.fetchFile;
+  api.fetchFile = async (id: number, ...args) => {
+    if (!files[id]) {
+      const pda = await api.getFilePda(id);
+      const file = await fetchFile(id, ...args);
+      files[id] = { publicKey: pda.publicKey, account: file };
+    }
+    return files[id].account;
+  };
+
+  const updateFile = api.updateFile;
+  api.updateFile = async (file: solApi.File, ...args) => {
+    delete files[file.id];
+    return updateFile(file, ...args);
+  };
+
+  const removeFile = api.removeFile;
+  api.removeFile = async (id: number, ...args) => {
+    delete files[id];
+    return removeFile(id, ...args);
   };
 
   return api;

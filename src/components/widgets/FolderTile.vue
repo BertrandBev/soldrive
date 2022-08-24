@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useAsyncState } from "@vueuse/core";
-import { Folder } from "../../api/wrappedApi";
+import { Folder, useWrappedApi } from "../../api/wrappedApi";
 import { useUserStore } from "../../store/userStore";
 import { useRouter, useRoute } from "vue-router";
 
@@ -11,7 +11,8 @@ import { useClipbardStore } from "../../store/clipboardStore";
 
 // File icons
 const router = useRouter();
-const { pushFolder, hasFolder } = useClipbardStore();
+const { pushFile, pushFolder, hasFolder } = useClipbardStore();
+const api = useWrappedApi();
 
 const props = defineProps<{
   path: string[];
@@ -42,6 +43,10 @@ function move() {
   pushFolder(props.folder);
 }
 
+function onDragStart(ev: any) {
+  ev.dataTransfer.setData("folder", props.folder.id);
+}
+
 function onDragLeave(ev: any) {
   ev.preventDefault();
   dragHighlight.value = false;
@@ -53,10 +58,21 @@ function onDragOver(ev: any) {
   dragHighlight.value = true;
 }
 
-function onDrop(ev: any) {
+async function onDrop(ev: any) {
   ev.preventDefault();
   dragHighlight.value = false;
-  console.log("data", ev.srcElement);
+  if (ev.dataTransfer.getData("file")) {
+    const fileId = parseInt(ev.dataTransfer.getData("file"));
+    const file = await api.value!.fetchFile(fileId, true);
+    pushFile(file);
+  } else if (ev.dataTransfer.getData("folder")) {
+    const folderId = parseInt(ev.dataTransfer.getData("folder"));
+    if (folderId == props.folder.id) return;
+    const folder = await api.value!.fetchFolder(folderId);
+    pushFolder(folder);
+  }
+  // Nav to self
+  onClick();
 }
 </script>
 
@@ -69,6 +85,8 @@ function onDrop(ev: any) {
       @contextmenu.prevent.stop="(ev) => contextHandler(ev)"
       style="text-transform: initial"
       @click="onClick()"
+      draggable="true"
+      :ondragstart="onDragStart"
       :ondragover="onDragOver"
       :ondragleave="onDragLeave"
       :ondrop="onDrop"

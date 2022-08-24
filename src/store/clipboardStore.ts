@@ -21,23 +21,25 @@ function createClipboardStore() {
   });
 
   function pushFile(file: File) {
-    items.value.push({
-      type: "file",
-      id: file.id,
-      parent: file.parent,
-      name: file.name,
-      icon: fileIcon(file.fileExt),
-    });
+    if (!hasFile(file))
+      items.value.push({
+        type: "file",
+        id: file.id,
+        parent: file.parent,
+        name: file.name,
+        icon: fileIcon(file.fileExt),
+      });
   }
 
   function pushFolder(folder: Folder) {
-    items.value.push({
-      type: "folder",
-      id: folder.id,
-      parent: folder.parent,
-      name: folder.name,
-      icon: folderIcon,
-    });
+    if (!hasFolder(folder))
+      items.value.push({
+        type: "folder",
+        id: folder.id,
+        parent: folder.parent,
+        name: folder.name,
+        icon: folderIcon,
+      });
   }
 
   function popFile(file: File) {
@@ -81,7 +83,6 @@ function createClipboardStore() {
   async function move(parent: number) {
     // Remove
     const itemsToMove = items.value.filter((i) => i.parent != parent);
-    console.log('items to move', itemsToMove)
     if (itemsToMove.length)
       await api.value!.updateParent(
         itemsToMove.filter((i) => i.type == "file").map((f) => f.id),

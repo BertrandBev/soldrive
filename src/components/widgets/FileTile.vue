@@ -52,8 +52,8 @@ function move() {
   pushFile(props.file);
 }
 
-function onDragStart() {
-  console.log("on drag start");
+function onDragStart(ev: any) {
+  ev.dataTransfer.setData("file", props.file.id);
 }
 </script>
 
@@ -67,9 +67,6 @@ function onDragStart() {
       style="text-transform: initial"
       @click="onClick()"
       draggable="true"
-      dropzone="true"
-      data-a="wow"
-      :data-test="['a', 'b']"
       :ondragstart="onDragStart"
     >
       <!-- Icon -->
